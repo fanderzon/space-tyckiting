@@ -16,7 +16,8 @@ var state = {
     gameMap: [],
     radarPoints: [],
     lastRadarPoint: null,
-    config: null
+    config: null,
+    botsAlive: 0,
 };
 
 function getRadarPoint() {
@@ -71,6 +72,12 @@ function pos(obj) {
     return position.make(obj.x, obj.y);
 }
 
+function shootPoints(x, y) {
+    return [position.make(x-1, y+2),
+            position.make(x+2, y-1),
+            position.make(x-1, y-1),]
+}
+
 // Plans to do an evade action, which is moving as far as possible, in the direction
 // away from our other bots.
 function evade( plannedActions, player ) {
@@ -123,12 +130,20 @@ module.exports = function Ai() {
 
   function planForAttack(plannedActions, players, x, y) {
     return _.reduce(plannedActions, function(result, value, key) {
+      var player = state.players[key];
       if (value.mode === "EVADE") {
         result[key] = value;
       } else {
+        var shootPoint = position.make(x, y);
+
+        if (Math.random() > (1/state.botsAlive)) {
+            var potentialShootPoints = shootPoints(x, y);
+            shootPoint = potentialShootPoints[player.incrementalID % potentialShootPoints.length]
+        }
+
         result[key] = {
           mode: "ATTACK",
-          action: prepareAction(players[key].cannon, x, y)
+          action: prepareAction(players[key].cannon, shootPoint.x, shootPoint.y)
         };
       }
       return result;
@@ -154,7 +169,6 @@ module.exports = function Ai() {
       state.config = config;
     }
 
-
     var fieldRadius = config.fieldRadius;
     var maxMove = config.move;
 
@@ -175,15 +189,23 @@ module.exports = function Ai() {
       return memo;
     }, {});
 
+    console.log(chalk.blue(JSON.stringify(players)));
+
+    // Give each player an incremental ID to every player, mostly for use with shooting triangles.
+    var i = 0;
+    Object.keys(players).forEach(function(key) {
+        players[key].incrementalID = i;
+        i++;
+    });
+
     // Now everyone has access to players
     state.players = players;
 
     // Set the default action for all my alive bots to random radaring
+    state.botsAlive = 0;
     var plannedActions = _.reduce(players, function(memo, player) {
       if (player.alive) {
-        // var p = randomPosition( state.gameMap );
-        // var x = p.x;
-        // var y = p.y;
+        state.botsAlive++;
         var p = getRadarPoint();
         memo[player.botId] = {
           mode: "RADAR",
@@ -202,6 +224,8 @@ module.exports = function Ai() {
       } else if (event.event === "hit") {
         console.log( 'We hit something, attack!' );
         plannedActions = planForAttack(plannedActions, players, lastTarget.x, lastTarget.y);
+        //var pos = event.pos;
+        //lastTarget = _.clone(pos); // TODO: dunno if need to clone
       } else if (event.event === "see" || event.event === "radarEcho") {
         var pos = event.pos;
         console.info(chalk.blue("Saw bot at " + JSON.stringify(pos)));
