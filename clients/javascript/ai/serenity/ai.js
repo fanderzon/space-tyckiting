@@ -13,6 +13,11 @@ var state = {
     lastRadarPoint: null,
     config: null,
     botsAlive: 0,
+    lastPing: {
+      roundId: 0,
+      position: null
+    },
+    lastTarget: null
 };
 
 function getRadarPoint() {
@@ -154,7 +159,6 @@ module.exports = function Ai() {
       }, false);
   }
 
-  var lastTarget = {};
   /**
    * The mastermind bot controls all the bots at one team.
    * The logic is following:
@@ -209,6 +213,9 @@ module.exports = function Ai() {
     var plannedActions = _.reduce(players, function(memo, player) {
       if (player.alive) {
         state.botsAlive++;
+        if (state.lastPing.roundId && state.lastPing.roundId >= (roundId - 2) )  {
+          var p = state.lastPing;
+        }
         var p = getRadarPoint();
         memo[player.botId] = {
           mode: "RADAR",
@@ -227,13 +234,21 @@ module.exports = function Ai() {
       } else if (event.event === "hit") {
         if (!isOurBot(event.botId)) {
             console.log( 'We hit something, attack!' );
-            plannedActions = planForAttack(plannedActions, players, lastTarget.x, lastTarget.y);
+            state.lastPing = {
+              roundId: roundId,
+              position: state.lastTarget
+            };
+            plannedActions = planForAttack(plannedActions, players, state.lastTarget.x, state.lastTarget.y);
         }
       } else if (event.event === "see" || event.event === "radarEcho") {
         var pos = event.pos;
+        state.lastPing = {
+          roundId: roundId,
+          position:pos
+        };
         console.info(chalk.blue("Saw bot at " + JSON.stringify(pos)));
         plannedActions = planForAttack(plannedActions, players, pos.x, pos.y);
-        lastTarget = _.clone(pos); // TODO: dunno if need to clone
+        state.lastTarget = _.clone(pos); // TODO: dunno if need to clone
       } else if (event.event === "detected") {
         console.log('We were detected, evading!');
         return evade( plannedActions, player );
