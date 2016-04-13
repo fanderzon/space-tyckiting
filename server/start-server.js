@@ -12,7 +12,7 @@ var game = require("./server/game.js");
 
 var defaultConfig = {
     bots: 3,
-    fieldRadius: 28,
+    fieldRadius: 14,
     move: 2,
     startHp: 10,
     cannon: 1,
