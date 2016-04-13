@@ -179,7 +179,6 @@ module.exports = function Ai() {
     }
 
     if ( state.radarPoints.length === 0 ) {
-      console.log( 'state.radarPoints is empty ' );
       state.radarPoints = radar.getRadarPoints( config );
     }
 
