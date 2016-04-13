@@ -13,6 +13,10 @@ var botNames = [
 var gameMap = [];
 var gameConfig = {};
 
+var state = {
+    players : null
+};
+
 function randInt(min, max) {
   var range = max - min;
   var rand = Math.floor(Math.random() * (range + 1));
@@ -41,9 +45,42 @@ function prepareAction(action, x, y) {
   };
 }
 
+function pos(obj) {
+    return position.make(obj.x, obj.y);
+}
+
+// Plans to do an evade action, which is moving as far as possible, in the direction
+// away from our other bots.
 function evade( plannedActions, player ) {
   var maxMoves = maxDistanceMoves( player, gameConfig.move, gameConfig.fieldRadius );
-  var evadePos = maxMoves[ randInt( 0, maxMoves.length - 1 ) ];
+  //var evadePos = maxMoves[ randInt( 0, maxMoves.length - 1 ) ];
+  // Old, random
+
+  var mostAvoidingMove = -1;
+  var closestDist = -1;
+  for (var i = 0; i < maxMoves.length; i++) {
+      var movePos = maxMoves[i]
+
+      var smallestDistTotherPlayer = 1000;
+      for (var otherBot in state.players) {
+          var playerPos = pos(player);
+          var botPos = pos(otherBot);
+          console.log(chalk.blue(botPos + " And I'm at " + playerPos));
+          var dist = position.distance(playerPos, botPos);
+          if (dist < smallestDistTotherPlayer) {
+              smallestDistTotherPlayer = dist;
+          }
+      }
+
+      if (smallestDistTotherPlayer < closestDist) {
+          closestDist = smallestDistTotherPlayer;
+          mostAvoidingMove = i;
+      }
+  }
+
+  var evadePos = maxMoves[mostAvoidingMove];
+
+  console.log(chalk.blue("Evaded to " + evadePos + "because out bots were at " + state.players))
 
   plannedActions[player.botId] = {
     mode: "EVADE",
@@ -96,6 +133,9 @@ module.exports = function Ai() {
       memo[bot.botId] = bot;
       return memo;
     }, {});
+
+    // Now everyone has access to players
+    state.players = players;
 
     // Set the default action for all my alive bots to random radaring
     var plannedActions = _.reduce(players, function(memo, player) {
