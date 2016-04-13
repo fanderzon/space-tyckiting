@@ -11,12 +11,11 @@ var botNames = [
   "Wash"
 ];
 
-var gameMap = [];
-var radarPoints = [];
-var gameConfig = {};
-
 var state = {
-    players : null
+    players : null,
+    gameMap: [],
+    radarPoints: [],
+    config: null
 };
 
 function randInt(min, max) {
@@ -55,7 +54,7 @@ function pos(obj) {
 // Plans to do an evade action, which is moving as far as possible, in the direction
 // away from our other bots.
 function evade( plannedActions, player ) {
-  var maxMoves = maxDistanceMoves( player, gameConfig.move, gameConfig.fieldRadius );
+  var maxMoves = maxDistanceMoves( player, state.config.move, state.config.fieldRadius );
   //var evadePos = maxMoves[ randInt( 0, maxMoves.length - 1 ) ];
   // Old, random
 
@@ -129,20 +128,25 @@ module.exports = function Ai() {
    * @param events
    */
   function makeDecisions(roundId, events, bots, config) {
-    gameConfig = config;
+
+    // Set config to state once
+    if ( !state.config ) {
+      state.config = config;
+    }
+
 
     var fieldRadius = config.fieldRadius;
     var maxMove = config.move;
 
     // Let's set the game map as an array for easy random positions
-    if (gameMap.length === 0) {
-      gameMap = position.neighbours( position.origo, config.fieldRadius );
-      gameMap.push( position.origo );
+    if (state.gameMap.length === 0) {
+      state.gameMap = position.neighbours( position.origo, config.fieldRadius );
+      state.gameMap.push( position.origo );
     }
 
-    if (radarPoints.length === 0) {
-      console.log( 'radarPoints is empty ');
-      radarPoints = radar.getRadarPoints( config );
+    if ( state.radarPoints.length === 0 ) {
+      console.log( 'state.radarPoints is empty ' );
+      state.radarPoints = radar.getRadarPoints( config );
     }
 
     // Map bot to id, for easier usage
@@ -157,7 +161,7 @@ module.exports = function Ai() {
     // Set the default action for all my alive bots to random radaring
     var plannedActions = _.reduce(players, function(memo, player) {
       if (player.alive) {
-        var p = randomPosition( gameMap );
+        var p = randomPosition( state.gameMap );
         var x = p.x;
         var y = p.y;
         memo[player.botId] = {
