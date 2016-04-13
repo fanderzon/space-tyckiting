@@ -5,12 +5,7 @@ var chalk = require("chalk");
 var position = require("../../position.js");
 var radar = require('./radar.js');
 
-var botNames = [
-  "Mal",
-  "Zoe",
-  "Wash"
-];
-
+// Updated at begginning of each makeDecisions, global state that every function can read from.
 var state = {
     players : null,
     gameMap: [],
@@ -67,51 +62,54 @@ function prepareAction(action, x, y) {
   };
 }
 
+// Converts an object with x and y to a position representing those coordinates.
 function pos(obj) {
-    console.log(chalk.blue(obj.x, obj.y, "Hope"));
     return position.make(obj.x, obj.y);
 }
 
+// Returns three points in a triangle around the given point.
 function shootPoints(x, y) {
     return [position.make(x-1, y+2),
             position.make(x+2, y-1),
             position.make(x-1, y-1),]
 }
 
+function distanceToOurNearestBot(pos) {
+
+}
+
 // Plans to do an evade action, which is moving as far as possible, in the direction
 // away from our other bots.
 function evade( plannedActions, player ) {
   var maxMoves = maxDistanceMoves( player, state.config.move, state.config.fieldRadius );
-  //var evadePos = maxMoves[ randInt( 0, maxMoves.length - 1 ) ];
-  // Old, random
 
   // Finding move which avoids our other bots the most
   var mostAvoidingMove = -1;
-  var closestDist = -1;
+  var moveDistToNearestBot = -1;
   for (var i = 0; i < maxMoves.length; i++) {
       var move = maxMoves[i]
 
       // Finding the closest player to this specific move
-      var smallestDistTotherPlayer = 1000;
+      var smallestDistToOtherPlayer = 1000;
       Object.keys(state.players).forEach(function(key) {
           var otherBot = state.players[key]
 
+          // Exclude the bot we are evading with
           if (otherBot == player) {
-              console.log(chalk.blue("Skipped" + otherBot.x + ", " + otherBot.y))
               return;
           }
 
           var dist = position.distance(pos(move), pos(otherBot));
-          if (dist < smallestDistTotherPlayer) {
-              smallestDistTotherPlayer = dist;
+          if (dist < smallestDistToOtherPlayer) {
+              smallestDistToOtherPlayer = dist;
           }
       });
 
-      if (smallestDistTotherPlayer > closestDist) {
-          closestDist = smallestDistTotherPlayer;
+      if (smallestDistToOtherPlayer > moveDistToNearestBot) {
+          moveDistToNearestBot = smallestDistToOtherPlayer;
           mostAvoidingMove = i;
       }
-      console.log(chalk.blue("Move to" + JSON.stringify(maxMoves[mostAvoidingMove]) + " Had distance " + closestDist))
+      console.log(chalk.blue("Move to" + JSON.stringify(maxMoves[mostAvoidingMove]) + " Had distance " + moveDistToNearestBot))
   }
 
   var evadePos = maxMoves[mostAvoidingMove];
@@ -255,7 +253,11 @@ module.exports = function Ai() {
   }
 
   return {
-    botNames: botNames,
+    botNames: [
+      "Mal",
+      "Zoe",
+      "Wash"
+    ],
     makeDecisions: makeDecisions
   };
 };
