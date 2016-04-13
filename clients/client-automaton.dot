@@ -1,0 +1,14 @@
+# dot -Tpng client-automaton.dot > client-automaton.png
+digraph client_automaton {
+    rankdir=LR;
+    size="8,5";
+    node [shape = doublecircle]; "start" "turn" "end";
+    node [shape = circle];
+    start -> S1      [ label = "connect"; color = "#349c4a" ];
+    S1 -> S2         [ label = "CONNECTED"; color = "#808080" ];
+    S2 -> S3         [ label = "JOIN"; color = "#349c4a" ]
+    S3 -> "turn"     [ label = "START"; color = "#808080" ];
+    "turn" -> "wait" [ label = "EVENTS"; color = "#808080" ];
+    "wait" -> "turn" [ label = "ACTIONS"; color = "#349c4a" ];
+    "turn" -> "end"  [ label = "END"; color = "#808080" ];
+}

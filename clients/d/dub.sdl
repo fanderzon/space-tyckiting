@@ -1,0 +1,5 @@
+name "space-tyckiting"
+description "Space tyckiting"
+copyright "Copyright © 2016, greenify"
+authors "greenify"
+dependency "vibe-d" version="~>0.7.29-alpha.2"

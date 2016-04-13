@@ -1,0 +1,14 @@
+[package]
+
+name = "tyckiting-client"
+version = "0.0.1"
+authors = ["Daniel Landau <daniel.landau@futurice.com>"]
+
+[dependencies]
+websocket = "*"
+rustc-serialize = "*"
+docopt = "*"
+rand = "*"
+hyper = "*"
+serde = "*"
+serde_macros = "*"

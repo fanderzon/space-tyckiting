@@ -1,0 +1,496 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4703E4781ABDF34700F6D0F1 /* TyckitingClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4703E4771ABDF34700F6D0F1 /* TyckitingClientTests.swift */; };
+		4703E4861ABDF43000F6D0F1 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4703E4851ABDF43000F6D0F1 /* main.swift */; };
+		471754B11C6CF79000AE84FC /* Curry.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 471754B01C6CF79000AE84FC /* Curry.framework */; };
+		471754B21C6CF79000AE84FC /* Curry.framework in Copy Framworks */ = {isa = PBXBuildFile; fileRef = 471754B01C6CF79000AE84FC /* Curry.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		471F20081ACB1490007919D1 /* SocketRocket.framework in Copy Framworks */ = {isa = PBXBuildFile; fileRef = 474245481ABDF9C200CF3842 /* SocketRocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4744A7C61AD068F200CE9EC9 /* DummyAI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4744A7C51AD068F200CE9EC9 /* DummyAI.swift */; };
+		4744A7D51AD0841700CE9EC9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4744A7D41AD0841700CE9EC9 /* Models.swift */; };
+		4744A7D71AD084E500CE9EC9 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4744A7D61AD084E500CE9EC9 /* Utils.swift */; };
+		47BA935D1ACB1C0E00D525D7 /* Argo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47C50C1F1AC9C5A600BB2978 /* Argo.framework */; };
+		47BA935F1ACB1C1400D525D7 /* Argo.framework in Copy Framworks */ = {isa = PBXBuildFile; fileRef = 47C50C1F1AC9C5A600BB2978 /* Argo.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		47BA93661ACB2C8000D525D7 /* CommandLine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47BA93641ACB2C7700D525D7 /* CommandLine.framework */; };
+		47BA93671ACB2C8000D525D7 /* CommandLine.framework in Copy Framworks */ = {isa = PBXBuildFile; fileRef = 47BA93641ACB2C7700D525D7 /* CommandLine.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		47C50C1E1AC9C5A600BB2978 /* SocketRocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 474245481ABDF9C200CF3842 /* SocketRocket.framework */; };
+		47D6B2D21AD15B4D0019D413 /* BaseAI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D6B2D11AD15B4D0019D413 /* BaseAI.swift */; };
+		47D6B2D51AD15B710019D413 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D6B2D41AD15B710019D413 /* Client.swift */; };
+		47DEFCE91ACD5F28006CE53B /* Messages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47DEFCE81ACD5F28006CE53B /* Messages.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4703E4721ABDF34700F6D0F1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4703E4591ABDF34700F6D0F1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4703E4601ABDF34700F6D0F1;
+			remoteInfo = TyckitingClient;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		471F20031ACB147B007919D1 /* Copy Framworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				471754B21C6CF79000AE84FC /* Curry.framework in Copy Framworks */,
+				47BA93671ACB2C8000D525D7 /* CommandLine.framework in Copy Framworks */,
+				47BA935F1ACB1C1400D525D7 /* Argo.framework in Copy Framworks */,
+				471F20081ACB1490007919D1 /* SocketRocket.framework in Copy Framworks */,
+			);
+			name = "Copy Framworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		4703E4611ABDF34700F6D0F1 /* TyckitingClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TyckitingClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4703E4651ABDF34700F6D0F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4703E4711ABDF34700F6D0F1 /* TyckitingClientTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TyckitingClientTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4703E4761ABDF34700F6D0F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4703E4771ABDF34700F6D0F1 /* TyckitingClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TyckitingClientTests.swift; sourceTree = "<group>"; };
+		4703E4851ABDF43000F6D0F1 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		4703E4871ABDF61500F6D0F1 /* TyckitingClient-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TyckitingClient-Bridging-Header.h"; sourceTree = "<group>"; };
+		471754B01C6CF79000AE84FC /* Curry.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Curry.framework; path = Carthage/Build/Mac/Curry.framework; sourceTree = "<group>"; };
+		474245481ABDF9C200CF3842 /* SocketRocket.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketRocket.framework; path = Carthage/Build/Mac/SocketRocket.framework; sourceTree = "<group>"; };
+		4744A7C51AD068F200CE9EC9 /* DummyAI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DummyAI.swift; sourceTree = "<group>"; };
+		4744A7D41AD0841700CE9EC9 /* Models.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		4744A7D61AD084E500CE9EC9 /* Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		47BA93641ACB2C7700D525D7 /* CommandLine.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CommandLine.framework; path = Carthage/Build/Mac/CommandLine.framework; sourceTree = "<group>"; };
+		47C50C061AC9AEDA00BB2978 /* Argo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Argo.framework; path = Carthage/Build/iOS/Argo.framework; sourceTree = "<group>"; };
+		47C50C1F1AC9C5A600BB2978 /* Argo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Argo.framework; path = Carthage/Build/Mac/Argo.framework; sourceTree = "<group>"; };
+		47D6B2D11AD15B4D0019D413 /* BaseAI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseAI.swift; sourceTree = "<group>"; };
+		47D6B2D41AD15B710019D413 /* Client.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
+		47DEFCE81ACD5F28006CE53B /* Messages.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Messages.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4703E45E1ABDF34700F6D0F1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				471754B11C6CF79000AE84FC /* Curry.framework in Frameworks */,
+				47BA93661ACB2C8000D525D7 /* CommandLine.framework in Frameworks */,
+				47BA935D1ACB1C0E00D525D7 /* Argo.framework in Frameworks */,
+				47C50C1E1AC9C5A600BB2978 /* SocketRocket.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4703E46E1ABDF34700F6D0F1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4703E4581ABDF34700F6D0F1 = {
+			isa = PBXGroup;
+			children = (
+				4703E4631ABDF34700F6D0F1 /* TyckitingClient */,
+				4703E4741ABDF34700F6D0F1 /* TyckitingClientTests */,
+				4742454B1ABDF9CD00CF3842 /* Frameworks */,
+				4703E4621ABDF34700F6D0F1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4703E4621ABDF34700F6D0F1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4703E4611ABDF34700F6D0F1 /* TyckitingClient.app */,
+				4703E4711ABDF34700F6D0F1 /* TyckitingClientTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4703E4631ABDF34700F6D0F1 /* TyckitingClient */ = {
+			isa = PBXGroup;
+			children = (
+				4703E4851ABDF43000F6D0F1 /* main.swift */,
+				47D6B2D41AD15B710019D413 /* Client.swift */,
+				47DEFCE81ACD5F28006CE53B /* Messages.swift */,
+				4744A7D41AD0841700CE9EC9 /* Models.swift */,
+				4744A7D61AD084E500CE9EC9 /* Utils.swift */,
+				47D6B2D31AD15B540019D413 /* AI */,
+				4703E4641ABDF34700F6D0F1 /* Supporting Files */,
+			);
+			path = TyckitingClient;
+			sourceTree = "<group>";
+		};
+		4703E4641ABDF34700F6D0F1 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				4703E4871ABDF61500F6D0F1 /* TyckitingClient-Bridging-Header.h */,
+				4703E4651ABDF34700F6D0F1 /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		4703E4741ABDF34700F6D0F1 /* TyckitingClientTests */ = {
+			isa = PBXGroup;
+			children = (
+				4703E4771ABDF34700F6D0F1 /* TyckitingClientTests.swift */,
+				4703E4751ABDF34700F6D0F1 /* Supporting Files */,
+			);
+			path = TyckitingClientTests;
+			sourceTree = "<group>";
+		};
+		4703E4751ABDF34700F6D0F1 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				4703E4761ABDF34700F6D0F1 /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		4742454B1ABDF9CD00CF3842 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				471754B01C6CF79000AE84FC /* Curry.framework */,
+				47BA93641ACB2C7700D525D7 /* CommandLine.framework */,
+				47C50C1F1AC9C5A600BB2978 /* Argo.framework */,
+				47C50C061AC9AEDA00BB2978 /* Argo.framework */,
+				474245481ABDF9C200CF3842 /* SocketRocket.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		47D6B2D31AD15B540019D413 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				47D6B2D11AD15B4D0019D413 /* BaseAI.swift */,
+				4744A7C51AD068F200CE9EC9 /* DummyAI.swift */,
+			);
+			name = AI;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4703E4601ABDF34700F6D0F1 /* TyckitingClient */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4703E47B1ABDF34700F6D0F1 /* Build configuration list for PBXNativeTarget "TyckitingClient" */;
+			buildPhases = (
+				4703E45D1ABDF34700F6D0F1 /* Sources */,
+				4703E45E1ABDF34700F6D0F1 /* Frameworks */,
+				4703E45F1ABDF34700F6D0F1 /* Resources */,
+				471F20031ACB147B007919D1 /* Copy Framworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TyckitingClient;
+			productName = TyckitingClient;
+			productReference = 4703E4611ABDF34700F6D0F1 /* TyckitingClient.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4703E4701ABDF34700F6D0F1 /* TyckitingClientTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4703E47E1ABDF34700F6D0F1 /* Build configuration list for PBXNativeTarget "TyckitingClientTests" */;
+			buildPhases = (
+				4703E46D1ABDF34700F6D0F1 /* Sources */,
+				4703E46E1ABDF34700F6D0F1 /* Frameworks */,
+				4703E46F1ABDF34700F6D0F1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4703E4731ABDF34700F6D0F1 /* PBXTargetDependency */,
+			);
+			name = TyckitingClientTests;
+			productName = TyckitingClientTests;
+			productReference = 4703E4711ABDF34700F6D0F1 /* TyckitingClientTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4703E4591ABDF34700F6D0F1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftMigration = 0720;
+				LastSwiftUpdateCheck = 0720;
+				LastUpgradeCheck = 0720;
+				ORGANIZATIONNAME = Futurice;
+				TargetAttributes = {
+					4703E4601ABDF34700F6D0F1 = {
+						CreatedOnToolsVersion = 6.3;
+					};
+					4703E4701ABDF34700F6D0F1 = {
+						CreatedOnToolsVersion = 6.3;
+						TestTargetID = 4703E4601ABDF34700F6D0F1;
+					};
+				};
+			};
+			buildConfigurationList = 4703E45C1ABDF34700F6D0F1 /* Build configuration list for PBXProject "TyckitingClient" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4703E4581ABDF34700F6D0F1;
+			productRefGroup = 4703E4621ABDF34700F6D0F1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4703E4601ABDF34700F6D0F1 /* TyckitingClient */,
+				4703E4701ABDF34700F6D0F1 /* TyckitingClientTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4703E45F1ABDF34700F6D0F1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4703E46F1ABDF34700F6D0F1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4703E45D1ABDF34700F6D0F1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4744A7D71AD084E500CE9EC9 /* Utils.swift in Sources */,
+				47D6B2D51AD15B710019D413 /* Client.swift in Sources */,
+				4703E4861ABDF43000F6D0F1 /* main.swift in Sources */,
+				4744A7C61AD068F200CE9EC9 /* DummyAI.swift in Sources */,
+				47DEFCE91ACD5F28006CE53B /* Messages.swift in Sources */,
+				47D6B2D21AD15B4D0019D413 /* BaseAI.swift in Sources */,
+				4744A7D51AD0841700CE9EC9 /* Models.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4703E46D1ABDF34700F6D0F1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4703E4781ABDF34700F6D0F1 /* TyckitingClientTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4703E4731ABDF34700F6D0F1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4703E4601ABDF34700F6D0F1 /* TyckitingClient */;
+			targetProxy = 4703E4721ABDF34700F6D0F1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		4703E4791ABDF34700F6D0F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		4703E47A1ABDF34700F6D0F1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		4703E47C1ABDF34700F6D0F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				INFOPLIST_FILE = TyckitingClient/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.futurice.codecamp.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "TyckitingClient/TyckitingClient-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		4703E47D1ABDF34700F6D0F1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/Mac",
+				);
+				INFOPLIST_FILE = TyckitingClient/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.futurice.codecamp.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "TyckitingClient/TyckitingClient-Bridging-Header.h";
+			};
+			name = Release;
+		};
+		4703E47F1ABDF34700F6D0F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = TyckitingClientTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.futurice.codecamp.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TyckitingClient.app/Contents/MacOS/TyckitingClient";
+			};
+			name = Debug;
+		};
+		4703E4801ABDF34700F6D0F1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = TyckitingClientTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.futurice.codecamp.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TyckitingClient.app/Contents/MacOS/TyckitingClient";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4703E45C1ABDF34700F6D0F1 /* Build configuration list for PBXProject "TyckitingClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4703E4791ABDF34700F6D0F1 /* Debug */,
+				4703E47A1ABDF34700F6D0F1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4703E47B1ABDF34700F6D0F1 /* Build configuration list for PBXNativeTarget "TyckitingClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4703E47C1ABDF34700F6D0F1 /* Debug */,
+				4703E47D1ABDF34700F6D0F1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4703E47E1ABDF34700F6D0F1 /* Build configuration list for PBXNativeTarget "TyckitingClientTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4703E47F1ABDF34700F6D0F1 /* Debug */,
+				4703E4801ABDF34700F6D0F1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4703E4591ABDF34700F6D0F1 /* Project object */;
+}

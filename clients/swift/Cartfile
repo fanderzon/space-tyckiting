@@ -1,0 +1,4 @@
+github "square/SocketRocket"
+github "thoughtbot/Argo"
+github "thoughtbot/Curry"
+github "mkauppila/CommandLine" "feature/default-values"

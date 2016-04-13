@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+ROOTDIR=$(cd -P $(dirname $0); pwd)
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 your-bot-name" >&2
+    exit 1
+fi
+
+BOTNAME=$1
+shift
+BOTSDIR=$ROOTDIR/client/ai
+DUMMYBOTDIR=$BOTSDIR/dummy
+NEWBOTDIR=$BOTSDIR/$BOTNAME
+
+if [[ -d $NEWBOTDIR ]]; then
+    echo "Bot $BOTNAME already exists at $NEWBOTDIR" >&2
+    exit 1
+fi
+
+if [[ ! -d $DUMMYBOTDIR ]]; then
+    echo "Unable to find bot template at $DUMMYBOTDIR"
+    echo "What have you done with him?!"
+    exit 1
+fi
+
+cp -a "$DUMMYBOTDIR" "$NEWBOTDIR"
+echo "------------- Whee!! ------------"
+echo "Your bot code is waiting at $NEWBOTDIR"
+echo "Edit the ai.js inside the directory"
+echo "---------------------------------"

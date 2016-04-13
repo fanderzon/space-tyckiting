@@ -1,0 +1,4 @@
+github "thoughtbot/Argo" "v2.2.0"
+github "mkauppila/CommandLine" "6b1e7b8c8cbc82c6a6ef5d2c838c68860aaaf89a"
+github "thoughtbot/Curry" "v1.4.0"
+github "square/SocketRocket" "0.4.2"

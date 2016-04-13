@@ -1,0 +1,9 @@
+resolver: lts-5.3
+packages:
+- '.'
+extra-deps:
+- Stream-0.4.7.2
+- aeson-0.11.0.0
+- arrows-0.4.4.1
+- fail-4.9.0.0
+- lazysmallcheck-0.6

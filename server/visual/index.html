@@ -1,0 +1,45 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Space Tyckiting - Local</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <section class="main">
+        <section id="mapArea" class="outerBorder">
+            <div id="mainScreen" class="innerBorder"></div>
+        </section>
+        <section id="team" class="outerBorder">
+            <ul class="statuses innerBorder"></ul>
+            <ul class="messageBox innerBorder"></ul>
+        </section>
+    </section>
+    <script>
+    var config = {
+      "bots":3,
+      "fieldRadius":14,
+      "move":2,
+      "startHp":10,
+      "cannon":1,
+      "radar":3,
+      "see":2,
+      "maxCount":200,
+      "asteroids":0,
+      "loopTime":300,
+      "noWait":false
+    };
+    </script>
+    <script src="libs/bluebird.min.js"></script>
+    <script src="libs/jquery.min.js"></script>
+    <script src="libs/lodash.min.js"></script>
+    <script src="libs/snap.svg-min.js"></script>
+    <script src="libs/svg.min.js"></script>
+
+    <script src="colors.js"></script>
+    <script src="hexGrid.js"></script>
+    <script src="messageBox.js"></script>
+    <script src="mainScreen.js"></script>
+    <script src="ui.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

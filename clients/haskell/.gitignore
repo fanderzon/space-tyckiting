@@ -1,0 +1,11 @@
+# Build artifacts
+.stack-work
+dist/
+
+# Sandbox
+.cabal-sandbox/
+cabal.sandbox.config
+
+# update with hasktags --ctags --extendedctag src # For Vim and Sublime
+#             hasktags --etags                    # For Emacs
+tags

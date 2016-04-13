@@ -1,0 +1,13 @@
+{
+  "bots": 3,
+  "fieldRadius": 14,
+  "move": 2,
+  "startHp": 10,
+  "cannon": 1,
+  "radar": 3,
+  "see": 2,
+  "maxCount": 200,
+  "asteroids": 0,
+  "loopTime": 300,
+  "noWait": false
+}

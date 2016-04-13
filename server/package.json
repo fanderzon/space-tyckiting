@@ -1,0 +1,23 @@
+{
+  "name": "space-tyckiting",
+  "version": "0.1.0",
+  "private": "true",
+  "dependencies": {
+    "bluebird": "^2.9.13",
+    "chalk": "^1.0.0",
+    "commander": "2.6.0",
+    "express": "*",
+    "lodash": "^2.0.0",
+    "minimist": "*",
+    "typify": "^0.2.9",
+    "ws": "0.7.1"
+  },
+  "devDependencies": {
+    "chai": "^1.10.0",
+    "eslint": "^0.15.1",
+    "istanbul": "^0.3.8",
+    "jscs": "^1.11.3",
+    "jsverify": "^0.5.2",
+    "mocha": "^2.2.1"
+  }
+}

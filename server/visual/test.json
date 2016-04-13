@@ -1,0 +1,86 @@
+[
+    {
+        "target": "Mastermind 55",
+        "content": {
+            "event": "hit",
+            "source": {
+                "id": 3,
+                "name": "Drone Two",
+                "team": "Mastermind 55"
+            },
+            "data": {
+                "id": 2,
+                "name": "Two",
+                "team": "Dummy 21"
+            }
+        }
+    },
+    {
+        "target": "Dummy 21",
+        "content": {
+            "event": "hit",
+            "data": {
+                "id": 2,
+                "name": "Two",
+                "team": "Dummy 21",
+                "damage": 1
+            }
+        }
+    },
+    {
+        "target": "Mastermind 55",
+        "content": {
+            "event": "hit",
+            "source": {
+                "id": 4,
+                "name": "Drone One",
+                "team": "Mastermind 55"
+            },
+            "data": {
+                "id": 2,
+                "name": "Two",
+                "team": "Dummy 21"
+            }
+        }
+    },
+    {
+        "target": "Dummy 21",
+        "content": {
+            "event": "hit",
+            "data": {
+                "id": 2,
+                "name": "Two",
+                "team": "Dummy 21",
+                "damage": 1
+            }
+        }
+    },
+    {
+        "target": "Mastermind 55",
+        "content": {
+            "event": "hit",
+            "source": {
+                "id": 5,
+                "name": "Drone Zero",
+                "team": "Mastermind 55"
+            },
+            "data": {
+                "id": 2,
+                "name": "Two",
+                "team": "Dummy 21"
+            }
+        }
+    },
+    {
+        "target": "Dummy 21",
+        "content": {
+            "event": "hit",
+            "data": {
+                "id": 2,
+                "name": "Two",
+                "team": "Dummy 21",
+                "damage": 1
+            }
+        }
+    }
+]
