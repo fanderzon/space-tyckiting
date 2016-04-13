@@ -54,21 +54,20 @@ function findRadarPoint( config ) {
     return new Point( rowStart, -(config.fieldRadius - config.radar) );
   }
 
-  console.log( 'lastPoint', lastPoint, rowEnd, rowEndChange );
   if (lastPoint.x >= rowEnd ) {
     rowStart = rowStart + rowStartChange;
     rowEnd = rowEnd + rowEndChange;
 
-    if (rowStart <= -(config.fieldRadius - config.radar)) {
-      console.log('too low rowStart', rowStart);
+    if (rowStart <= -(config.fieldRadius)) {
       rowStart = -(config.fieldRadius - config.radar);
       rowStartChange = 0;
       rowEndChange = -( config.radar + 1);
       rowEnd = config.fieldRadius - ( (lastPoint.y + 4) || 0) - config.radar;
-      // When the y coord is larger than the radius let's exit
-      if (lastPoint.y + ( config.radar + 1 ) > config.fieldRadius) {
-        return null;
-      }
+    }
+
+    // When the y coord is larger than the radius let's exit
+    if (lastPoint.y +  config.radar + 1  > config.fieldRadius) {
+      return null;
     }
     return {
       x: rowStart,
