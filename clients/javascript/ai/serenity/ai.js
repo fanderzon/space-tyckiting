@@ -3,6 +3,7 @@
 var _ = require("lodash");
 var chalk = require("chalk");
 var position = require("../../position.js");
+var radar = require('./radar.js');
 
 var botNames = [
   "Mal",
@@ -11,6 +12,7 @@ var botNames = [
 ];
 
 var gameMap = [];
+var radarPoints = [];
 var gameConfig = {};
 
 var state = {
@@ -126,6 +128,11 @@ module.exports = function Ai() {
     if (gameMap.length === 0) {
       gameMap = position.neighbours( position.origo, config.fieldRadius );
       gameMap.push( position.origo );
+    }
+
+    if (radarPoints.length === 0) {
+      console.log( 'radarPoints is empty ');
+      radarPoints = radar.getRadarPoints( config );
     }
 
     // Map bot to id, for easier usage

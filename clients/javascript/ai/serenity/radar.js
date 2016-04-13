@@ -1,4 +1,31 @@
-function findRadarPoint() {
+var _ = require('lodash');
+
+var radarPoints = [];
+var rowStart = 0;
+var rowEnd;
+var rowStartChange;
+var rowEndChange = 0;
+
+function getRadarPoints( config ) {
+  var point = true;
+   rowEnd = config.fieldRadius - config.radar;
+   rowStartChange = -( config.radar + 1);
+
+  while( point ) {
+    point = findRadarPoint( config );
+    radarPoints.push( point );
+  }
+
+  return radarPoints;
+}
+
+function Point(x, y) {
+    this.x = x;
+    this.y = y;
+}
+
+
+function findRadarPoint( config ) {
   //
   var lastPoint = radarPoints[ radarPoints.length - 1 ];
   if (!lastPoint) {
@@ -18,6 +45,10 @@ function findRadarPoint() {
       rowStartChange = 0;
       rowEndChange = -( config.radar + 1);
       rowEnd = config.fieldRadius - ( (lastPoint.y + 4) || 0) - config.radar;
+      // When the y coord is larger than the radius let's exit
+      if (lastPoint.y + ( config.radar + 1 ) > config.fieldRadius) {
+        return null;
+      }
     }
     return {
       x: rowStart,
@@ -29,3 +60,7 @@ function findRadarPoint() {
     x: lastPoint.x + 4
   });
 }
+
+module.exports = {
+  getRadarPoints: getRadarPoints
+};
