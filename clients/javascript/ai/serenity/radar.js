@@ -32,9 +32,10 @@ function getRadarPoints( config ) {
 
   while( point ) {
     point = findRadarPoint( config );
-    radarPoints.push( point );
+    if (point !== null) {
+      radarPoints.push( point );
+    }
   }
-
   return shuffle(radarPoints);
 }
 

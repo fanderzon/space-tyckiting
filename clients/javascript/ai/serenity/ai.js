@@ -15,8 +15,28 @@ var state = {
     players : null,
     gameMap: [],
     radarPoints: [],
+    lastRadarPoint: null,
     config: null
 };
+
+function getRadarPoint() {
+  // Really confusing ternary for "if last radar point is null or out of bounds set, to 0, otherwise +1 on last radar point"
+  var radarPoint;
+  if ( state.lastRadarPoint === null ) {
+    console.log('state.lastRadarPoint is null');
+    radarPoint = 0;
+  } else if ( state.lastRadarPoint + 1 > state.radarPoints.length - 1 ) {
+    console.log( 'state.lastRadarPoint + 1 is larger than the state.radarPoints.length');
+    radarPoint = 0;
+  } else {
+    console.log('setting radarpoint to +1 of state.lastRadarPoint');
+    radarPoint = state.lastRadarPoint + 1;
+  }
+
+  state.lastRadarPoint = radarPoint;
+  console.log('state.lastRadarPoint', state.lastRadarPoint, radarPoint, state.radarPoints.length);
+  return state.radarPoints[radarPoint];
+}
 
 function randInt(min, max) {
   var range = max - min;
@@ -161,9 +181,10 @@ module.exports = function Ai() {
     // Set the default action for all my alive bots to random radaring
     var plannedActions = _.reduce(players, function(memo, player) {
       if (player.alive) {
-        var p = randomPosition( state.gameMap );
-        var x = p.x;
-        var y = p.y;
+        // var p = randomPosition( state.gameMap );
+        // var x = p.x;
+        // var y = p.y;
+        var p = getRadarPoint();
         memo[player.botId] = {
           mode: "RADAR",
           action: prepareAction(player.radar, p.x, p.y)
