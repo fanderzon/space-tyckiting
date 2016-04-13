@@ -48,6 +48,7 @@ function prepareAction(action, x, y) {
 }
 
 function pos(obj) {
+    console.log(chalk.blue(obj.x, obj.y, "Hope"));
     return position.make(obj.x, obj.y);
 }
 
@@ -58,31 +59,40 @@ function evade( plannedActions, player ) {
   //var evadePos = maxMoves[ randInt( 0, maxMoves.length - 1 ) ];
   // Old, random
 
+  // Finding move which avoids our other bots the most
   var mostAvoidingMove = -1;
   var closestDist = -1;
   for (var i = 0; i < maxMoves.length; i++) {
-      var movePos = maxMoves[i]
+      var move = maxMoves[i]
 
+      // Finding the closest player to this specific move
       var smallestDistTotherPlayer = 1000;
-      for (var otherBot in state.players) {
-          var playerPos = pos(player);
-          var botPos = pos(otherBot);
-          console.log(chalk.blue(botPos + " And I'm at " + playerPos));
-          var dist = position.distance(playerPos, botPos);
+      Object.keys(state.players).forEach(function(key) {
+          var otherBot = state.players[key]
+
+          if (otherBot == player) {
+              console.log(chalk.blue("Skipped" + otherBot.x + ", " + otherBot.y))
+              return;
+          }
+
+          var dist = position.distance(pos(move), pos(otherBot));
           if (dist < smallestDistTotherPlayer) {
               smallestDistTotherPlayer = dist;
           }
-      }
+      });
 
-      if (smallestDistTotherPlayer < closestDist) {
+      if (smallestDistTotherPlayer > closestDist) {
           closestDist = smallestDistTotherPlayer;
           mostAvoidingMove = i;
       }
+      console.log(chalk.blue("Move to" + JSON.stringify(maxMoves[mostAvoidingMove]) + " Had distance " + closestDist))
   }
 
   var evadePos = maxMoves[mostAvoidingMove];
 
-  console.log(chalk.blue("Evaded to " + evadePos + "because out bots were at " + state.players))
+  console.log(chalk.blue("Evaded to " + JSON.stringify(evadePos) +
+    "because out bots were at " +
+    _.map(state.players, function(player) {return "(" + player.x + ", " + player.y + ")";})));
 
   plannedActions[player.botId] = {
     mode: "EVADE",
