@@ -150,6 +150,12 @@ module.exports = function Ai() {
     }, {});
   }
 
+  function isOurBot(botId) {
+      return _.reduce(state.players, function(acc, current) {
+          return acc || current.botId === botId;
+      }, false);
+  }
+
   var lastTarget = {};
   /**
    * The mastermind bot controls all the bots at one team.
@@ -221,10 +227,10 @@ module.exports = function Ai() {
           console.log( 'We were hit, evading!' );
           return evade( plannedActions, player );
       } else if (event.event === "hit") {
-        console.log( 'We hit something, attack!' );
-        plannedActions = planForAttack(plannedActions, players, lastTarget.x, lastTarget.y);
-        //var pos = event.pos;
-        //lastTarget = _.clone(pos); // TODO: dunno if need to clone
+        if (!isOurBot(event.botId)) {
+            console.log( 'We hit something, attack!' );
+            plannedActions = planForAttack(plannedActions, players, lastTarget.x, lastTarget.y);
+        }
       } else if (event.event === "see" || event.event === "radarEcho") {
         var pos = event.pos;
         console.info(chalk.blue("Saw bot at " + JSON.stringify(pos)));
