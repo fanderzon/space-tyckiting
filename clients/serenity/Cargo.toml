@@ -1,0 +1,14 @@
+[package]
+name = "serenity"
+version = "0.1.0"
+authors = ["Fredrik Andersson <fredrik.andersson@widespace.com>"]
+build = "build.rs"
+
+[build-dependencies]
+serde_codegen = "*"
+syntex = "*"
+
+[dependencies]
+websocket = "*"
+serde = "*"
+serde_json = "*"
