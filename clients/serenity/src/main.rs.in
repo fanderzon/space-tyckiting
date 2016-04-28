@@ -17,18 +17,18 @@ fn main() {
     let mut game_on = true;
 
     while game_on {
-
-    let url = Url::parse(format!("ws://{}:{}", game_host, game_port).as_ref()).unwrap();
-    let request = Client::connect(url).unwrap();
-    let response = request.send().unwrap();
-    match response.validate() {
-        Ok(()) => (),
-        Err(e) => {
-            println!("{:?}", e);
+        let url = Url::parse(format!("ws://{}:{}", game_host, game_port).as_ref()).unwrap();
+        let request = Client::connect(url).unwrap();
+        let response = request.send().unwrap();
+        match response.validate() {
+            Ok(()) => (),
+            Err(e) => {
+                println!("{:?}", e);
+                return;
+            }
         }
-    }
-    let (mut sender, mut receiver) = response.begin().split();
 
+        let (mut sender, mut receiver) = response.begin().split();
         for message in receiver.incoming_messages() {
             let message: Message = match message {
                 Ok(message) => message,
@@ -40,7 +40,10 @@ fn main() {
                 }
             };
 
-            game_on = handle_message(&mut sender, message);
+            if !handle_message(&mut sender, message) {
+                game_on = false;
+                break;
+            }
         }
     }
 }
@@ -51,33 +54,45 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
     match message.opcode {
         Type::Text => {
             println!("It's text!");
-            
+
             let pl = from_utf8(&message.payload).unwrap();
-            let response = Message::text(from_utf8(&*message.payload).unwrap());
-            let connected_json: Connected = serde_json::from_str(&pl).unwrap();
-            if connected_json.event_type == "connected" {
-                println!("Got connected message, sending join");
-                send_join_message(sender);
+            let message_json: AnyMessage = serde_json::from_str(&pl).unwrap();
+            match message_json.event_type.as_ref() {
+                "connected" => {
+                    let connected_json: Connected = serde_json::from_str(&pl).unwrap();
+                    if connected_json.event_type == "connected" {
+                        println!("Got connected message, sending join.");
+                        send_join_message(sender);
+                        println!("Now we wait for start.");
+                    }
+                }
+                "start" => {
+                    let start_json: Start = serde_json::from_str(&pl).unwrap();
+                    println!("Got start message!");
+                }
+                _ => ()
             }
-            println!("Connected {:?}", connected_json);
-            println!("Payload : {:?}", pl);
-            sender.send_message(&response).unwrap();
+
+            // Why are we doing this?
+            let response = Message::text(from_utf8(&*message.payload).unwrap());
+            let _ = sender.send_message(&response).unwrap();
         }
         Type::Binary => {
             println!("It's binary!");
-            sender.send_message(&Message::binary(message.payload)).unwrap();
+            let _ = sender.send_message(&Message::binary(message.payload)).unwrap();
         }
         Type::Close => {
             println!("It's a close message, exiting");
-            sender.send_message(&Message::close());
+            let _ = sender.send_message(&Message::close());
             return false;
         }
         Type::Ping => {
             println!("It's a ping!");
-            sender.send_message(&Message::pong(message.payload)).unwrap();
+            let _ = sender.send_message(&Message::pong(message.payload)).unwrap();
         }
         _ => (),
     }
+    // Keep playing
     return true;
 }
 
@@ -89,6 +104,12 @@ fn send_join_message<S: Sender>(sender: &mut S) {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+struct AnyMessage {
+    #[serde(rename="type")]
+    event_type: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 struct Connected  {
     #[serde(rename="type")]
     event_type: String,
@@ -96,6 +117,43 @@ struct Connected  {
     team_id: i8,
     config: Config,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Start {
+    #[serde(rename="type")]
+    event_type: String,
+    you: TeamSpec,
+    config: Config,
+    #[serde(rename="otherTeams")]
+    others: Vec<TeamSpec>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct TeamSpec {
+    name: String,
+    #[serde(rename="teamId")]
+    team_id: i8,
+    bots: Vec<Bot>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Bot {
+    #[serde(rename="botId")]
+    bot_id: i8,
+    name: String,
+    #[serde(rename="teamId")]
+    team_id: i8,
+    hp: i8,
+    alive: bool,
+    pos: Point,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Point {
+    x: i8,
+    y: i8,
+}
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Config  {
@@ -114,7 +172,7 @@ struct Config  {
     #[serde(rename="loopTime")]
     loop_time: i16,
     #[serde(rename="noWait")]
-    no_wait: bool
+    no_wait: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
