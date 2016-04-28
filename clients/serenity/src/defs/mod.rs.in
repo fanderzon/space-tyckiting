@@ -78,3 +78,14 @@ pub struct IncomingMessage {
     #[serde(rename="type")]
     pub event_type: String,
 }
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IncomingStart {
+    #[serde(rename="type")]
+    pub event_type: String,
+    pub you: Team,
+    pub config: Config,
+    #[serde(rename="otherTeams")]
+    pub others: Vec<Team>,
+}
