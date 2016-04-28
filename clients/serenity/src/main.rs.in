@@ -70,27 +70,27 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
                     let start_json: Start = serde_json::from_str(&pl).unwrap();
                     println!("Got start message!");
                 }
-                _ => ()
+                "events" => {
+                    println!("Got som events!");
+                }
+                "end" => {
+                    let end_json: End = serde_json::from_str(&pl).unwrap();
+                    println!("Got end message, we're ending!");
+                    return false;
+                }
+                ev => {
+                    println!("Got unrecognized event type {}, ignoring.", ev);
+                }
             }
-
-            // Why are we doing this?
-            let response = Message::text(from_utf8(&*message.payload).unwrap());
-            let _ = sender.send_message(&response).unwrap();
-        }
-        Type::Binary => {
-            println!("It's binary!");
-            let _ = sender.send_message(&Message::binary(message.payload)).unwrap();
         }
         Type::Close => {
             println!("It's a close message, exiting");
             let _ = sender.send_message(&Message::close());
             return false;
         }
-        Type::Ping => {
-            println!("It's a ping!");
-            let _ = sender.send_message(&Message::pong(message.payload)).unwrap();
+        _ => {
+            println!("Got a weird non-text message from server, ignoring.");
         }
-        _ => (),
     }
     // Keep playing
     return true;
@@ -129,6 +129,15 @@ struct Start {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+struct End {
+    #[serde(rename="type")]
+    event_type: String,
+    #[serde(rename="winnerTeamId")]
+    winner_id: i8,
+    you: TeamSpec,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 struct TeamSpec {
     name: String,
     #[serde(rename="teamId")]
@@ -143,9 +152,9 @@ struct Bot {
     name: String,
     #[serde(rename="teamId")]
     team_id: i8,
-    hp: i8,
     alive: bool,
-    pos: Point,
+    hp: Option<i8>,
+    pos: Option<Point>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
