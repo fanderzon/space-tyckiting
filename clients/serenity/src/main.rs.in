@@ -7,7 +7,7 @@ use websocket::message::Type;
 
 fn main() {
     let addr = "ws://localhost:3000".to_string();
-	let agent = "rust-websocket";
+    let agent = "rust-websocket";
     let game_host = "localhost";
     let game_port = "3000";
 
@@ -40,39 +40,43 @@ fn main() {
                 }
             };
 
-            println!("Message {:?}", message);
-
-            match message.opcode {
-                Type::Text => {
-                    let pl = from_utf8(&message.payload).unwrap();
-                    let response = Message::text(from_utf8(&*message.payload).unwrap());
-                    let connected_json: Connected = serde_json::from_str(&pl).unwrap();
-                    if connected_json.event_type == "connected" {
-                        println!("Got connected message, sending join");
-                        let join_msg = Join { event_type: "join".to_string(), team_name: "Serenity".to_string() };
-                        let join_string = serde_json::to_string(&join_msg).unwrap();
-                        let join_message = Message::text( join_string.to_string() );
-                        sender.send_message(&join_message).unwrap();
-                    }
-                    println!("Connected {:?}", connected_json);
-                    println!("Payload : {:?}", pl);
-                    sender.send_message(&response).unwrap();
-                }
-                Type::Binary => {
-                    sender.send_message(&Message::binary(message.payload)).unwrap();
-                }
-                Type::Close => {
-                    let _ = sender.send_message(&Message::close());
-                    game_on = false;
-                    break;
-                }
-                Type::Ping => {
-                    sender.send_message(&Message::pong(message.payload)).unwrap();
-                }
-                _ => (),
-            }
+            handle_message(&mut sender, message);
         }
     }
+}
+
+fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
+    println!("Message {:?}", message);
+
+    match message.opcode {
+        Type::Text => {
+            let pl = from_utf8(&message.payload).unwrap();
+            let response = Message::text(from_utf8(&*message.payload).unwrap());
+            let connected_json: Connected = serde_json::from_str(&pl).unwrap();
+            if connected_json.event_type == "connected" {
+                println!("Got connected message, sending join");
+                let join_msg = Join { event_type: "join".to_string(), team_name: "Serenity".to_string() };
+                let join_string = serde_json::to_string(&join_msg).unwrap();
+                let join_message = Message::text( join_string.to_string() );
+                sender.send_message(&join_message).unwrap();
+            }
+            println!("Connected {:?}", connected_json);
+            println!("Payload : {:?}", pl);
+            sender.send_message(&response).unwrap();
+        }
+        Type::Binary => {
+            sender.send_message(&Message::binary(message.payload)).unwrap();
+        }
+        Type::Close => {
+            let _ = sender.send_message(&Message::close());
+            return false;
+        }
+        Type::Ping => {
+            sender.send_message(&Message::pong(message.payload)).unwrap();
+        }
+        _ => (),
+    }
+    return true;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
