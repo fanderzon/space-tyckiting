@@ -1,11 +1,13 @@
 extern crate serde;
 extern crate serde_json;
 extern crate websocket;
+extern crate rand;
 
 use std::str::from_utf8;
 use websocket::client::request::Url;
 use websocket::{Client, Message, Sender, Receiver};
 use websocket::message::Type;
+use rand::Rng;
 
 mod defs;
 
@@ -78,6 +80,7 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
                     println!("Got events message!");
                     let event_json: defs::IncomingEvents = serde_json::from_str(&pl).unwrap();
                     println!("Message: {:?}", event_json);
+                    send_actions_message(sender, &event_json);
                 }
                 _ => ()
             }
@@ -106,4 +109,37 @@ fn send_join_message<S: Sender>(sender: &mut S) {
     let join_string = serde_json::to_string(&join_msg).unwrap();
     let join_message = Message::text( join_string.to_string() );
     sender.send_message(&join_message).unwrap();
+}
+
+fn send_actions_message<S: Sender>(sender: &mut S, events: &defs::IncomingEvents) {
+    let stupid_actions = defs::ActionsMessage {
+        event_type: "actions".to_string(),
+        round_id: events.round_id,
+        actions: vec![
+            defs::Action {
+                bot_id: 0,
+                action_type: "radar".to_string(),
+                pos: get_random_pos()
+            },
+            defs::Action {
+                bot_id: 1,
+                action_type: "radar".to_string(),
+                pos: get_random_pos()
+            },
+            defs::Action {
+                bot_id: 2,
+                action_type: "radar".to_string(),
+                pos: get_random_pos()
+            }
+        ]
+    };
+    let actions_string = serde_json::to_string(&stupid_actions).unwrap();
+    let actions_message = Message::text( actions_string.to_string() );
+    sender.send_message(&actions_message).unwrap();
+}
+
+// Random, doesn't care about the size of the board...
+fn get_random_pos() -> defs::Pos {
+    let mut rng = rand::thread_rng();
+    defs::Pos { x: rng.gen::<i16>(), y: rng.gen::<i16>() }
 }
