@@ -1,0 +1,91 @@
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Config  {
+    pub bots: i16,
+    #[serde(rename="fieldRadius")]
+    pub field_radius: i16,
+    #[serde(rename="move")]
+    pub moves_allowed: i16,
+    #[serde(rename="startHp")]
+    pub start_hp: i16,
+    pub cannon: i16,
+    pub radar: i16,
+    #[serde(rename="maxCount")]
+    pub max_count: i16,
+    pub asteroids: i16,
+    #[serde(rename="loopTime")]
+    pub loop_time: i16,
+    #[serde(rename="noWait")]
+    pub no_wait: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Pos {
+    pub x: i16,
+    pub y: i16,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Bot {
+    #[serde(rename="botId")]
+    pub bot_id: i16,
+    pub name: String,
+    #[serde(rename="teamId")]
+    pub team_id: i16,
+    pub alive: bool,
+    pub pos: Option<Pos>,
+    pub hp: Option<i16>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Team {
+    pub name: String,
+    #[serde(rename="teamId")]
+    pub team_id: i16,
+    pub bots: Vec<Bot>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JoinMessage  {
+    #[serde(rename="type")]
+    pub event_type: String,
+    #[serde(rename="teamName")]
+    pub team_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IncomingConnected  {
+    #[serde(rename="type")]
+    pub event_type: String,
+    #[serde(rename="teamId")]
+    pub team_id: i16,
+    pub config: Config,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IncomingEvents {
+    #[serde(rename="type")]
+    pub event_type: String,
+    #[serde(rename="roundId")]
+    pub round_id: i16,
+    pub config: Config,
+    pub you: Team,
+    #[serde(rename="otherTeams")]
+    pub other_teams: Vec<Team>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IncomingMessage {
+    #[serde(rename="type")]
+    pub event_type: String,
+}
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IncomingStart {
+    #[serde(rename="type")]
+    pub event_type: String,
+    pub you: Team,
+    pub config: Config,
+    #[serde(rename="otherTeams")]
+    pub others: Vec<Team>,
+}
