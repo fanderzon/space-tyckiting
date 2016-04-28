@@ -5,19 +5,19 @@ use websocket::client::request::Url;
 use websocket::{Client, Message, Sender, Receiver};
 use websocket::message::Type;
 
-fn main() {
-    let addr = "ws://localhost:3000".to_string();
-    let agent = "rust-websocket";
-    let game_host = "localhost";
-    let game_port = "3000";
+static ADDR: &'static str = "ws://localhost:3000";
+static AGENT: &'static str = "rust-websocket";
+static GAME_HOST: &'static str = "localhost";
+static GAME_PORT: &'static str = "3000";
 
-    println!("Using fuzzingserver {}", addr);
-    println!("Using agent {}", agent);
+fn main() {
+    println!("Using fuzzingserver {}", ADDR);
+    println!("Using agent {}", AGENT);
 
     let mut game_on = true;
 
     while game_on {
-        let url = Url::parse(format!("ws://{}:{}", game_host, game_port).as_ref()).unwrap();
+        let url = Url::parse(format!("ws://{}:{}", GAME_HOST, GAME_PORT).as_ref()).unwrap();
         let request = Client::connect(url).unwrap();
         let response = request.send().unwrap();
         match response.validate() {
@@ -60,11 +60,9 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
             match message_json.event_type.as_ref() {
                 "connected" => {
                     let connected_json: Connected = serde_json::from_str(&pl).unwrap();
-                    if connected_json.event_type == "connected" {
-                        println!("Got connected message, sending join.");
-                        send_join_message(sender);
-                        println!("Now we wait for start.");
-                    }
+                    println!("Got connected message, sending join.");
+                    send_join_message(sender);
+                    println!("Now we wait for start.");
                 }
                 "start" => {
                     let start_json: Start = serde_json::from_str(&pl).unwrap();
@@ -72,6 +70,7 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
                 }
                 "events" => {
                     println!("Got som events!");
+
                 }
                 "end" => {
                     let end_json: End = serde_json::from_str(&pl).unwrap();
@@ -111,8 +110,6 @@ struct AnyMessage {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Connected  {
-    #[serde(rename="type")]
-    event_type: String,
     #[serde(rename="teamId")]
     team_id: i8,
     config: Config,
@@ -120,8 +117,6 @@ struct Connected  {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Start {
-    #[serde(rename="type")]
-    event_type: String,
     you: TeamSpec,
     config: Config,
     #[serde(rename="otherTeams")]
@@ -130,8 +125,6 @@ struct Start {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct End {
-    #[serde(rename="type")]
-    event_type: String,
     #[serde(rename="winnerTeamId")]
     winner_id: i8,
     you: TeamSpec,
@@ -147,9 +140,9 @@ struct TeamSpec {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Bot {
+    name: String,
     #[serde(rename="botId")]
     bot_id: i8,
-    name: String,
     #[serde(rename="teamId")]
     team_id: i8,
     alive: bool,
@@ -162,7 +155,6 @@ struct Point {
     x: i8,
     y: i8,
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Config  {
