@@ -71,8 +71,13 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
                     }
                 }
                 "start" => {
-                    let start_json: defs::IncomingEvents = serde_json::from_str(&pl).unwrap();
+                    // We don't really need to do anything with start?
                     println!("Got start message!");
+                }
+                "events" => {
+                    println!("Got events message!");
+                    let event_json: defs::IncomingEvents = serde_json::from_str(&pl).unwrap();
+                    println!("Message: {:?}", event_json);
                 }
                 _ => ()
             }
