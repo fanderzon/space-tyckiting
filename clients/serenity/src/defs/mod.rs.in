@@ -45,11 +45,29 @@ pub struct Team {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct JoinMessage  {
+pub struct JoinMessage {
     #[serde(rename="type")]
     pub event_type: String,
     #[serde(rename="teamName")]
     pub team_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ActionsMessage {
+    #[serde(rename="type")]
+    pub event_type: String,
+    #[serde(rename="roundId")]
+    pub round_id: i16,
+    pub actions: Vec<Action>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Action  {
+    #[serde(rename="botId")]
+    pub bot_id: i16,
+    #[serde(rename="type")]
+    pub action_type: String,
+    pub pos: Pos,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -77,15 +95,4 @@ pub struct IncomingEvents {
 pub struct IncomingMessage {
     #[serde(rename="type")]
     pub event_type: String,
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct IncomingStart {
-    #[serde(rename="type")]
-    pub event_type: String,
-    pub you: Team,
-    pub config: Config,
-    #[serde(rename="otherTeams")]
-    pub others: Vec<Team>,
 }
