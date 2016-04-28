@@ -40,43 +40,52 @@ fn main() {
                 }
             };
 
-            handle_message(&mut sender, message);
+            game_on = handle_message(&mut sender, message);
         }
     }
 }
 
 fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
-    println!("Message {:?}", message);
+    print!("Got a message... ");
 
     match message.opcode {
         Type::Text => {
+            println!("It's text!");
+            
             let pl = from_utf8(&message.payload).unwrap();
             let response = Message::text(from_utf8(&*message.payload).unwrap());
             let connected_json: Connected = serde_json::from_str(&pl).unwrap();
             if connected_json.event_type == "connected" {
                 println!("Got connected message, sending join");
-                let join_msg = Join { event_type: "join".to_string(), team_name: "Serenity".to_string() };
-                let join_string = serde_json::to_string(&join_msg).unwrap();
-                let join_message = Message::text( join_string.to_string() );
-                sender.send_message(&join_message).unwrap();
+                send_join_message(sender);
             }
             println!("Connected {:?}", connected_json);
             println!("Payload : {:?}", pl);
             sender.send_message(&response).unwrap();
         }
         Type::Binary => {
+            println!("It's binary!");
             sender.send_message(&Message::binary(message.payload)).unwrap();
         }
         Type::Close => {
-            let _ = sender.send_message(&Message::close());
+            println!("It's a close message, exiting");
+            sender.send_message(&Message::close());
             return false;
         }
         Type::Ping => {
+            println!("It's a ping!");
             sender.send_message(&Message::pong(message.payload)).unwrap();
         }
         _ => (),
     }
     return true;
+}
+
+fn send_join_message<S: Sender>(sender: &mut S) {
+    let join_msg = Join { event_type: "join".to_string(), team_name: "Serenity".to_string() };
+    let join_string = serde_json::to_string(&join_msg).unwrap();
+    let join_message = Message::text( join_string.to_string() );
+    sender.send_message(&join_message).unwrap();
 }
 
 #[derive(Serialize, Deserialize, Debug)]
