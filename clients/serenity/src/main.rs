@@ -71,15 +71,11 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
                     }
                 }
                 "start" => {
-                    let start_json: defs::IncomingStart = serde_json::from_str(&pl).unwrap();
+                    let start_json: defs::IncomingEvents = serde_json::from_str(&pl).unwrap();
                     println!("Got start message!");
                 }
                 _ => ()
             }
-
-            // Why are we doing this?
-            let response = Message::text(from_utf8(&*message.payload).unwrap());
-            let _ = sender.send_message(&response).unwrap();
         }
         Type::Binary => {
             println!("It's binary!");
