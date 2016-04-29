@@ -74,12 +74,12 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
                 }
                 "start" => {
                     // We don't really need to do anything with start?
+                    // We need to get our bot ids, for one. Gotta add that.
                     println!("Got start message!");
                 }
                 "events" => {
                     println!("Got som events!");
                     let event_json: defs::IncomingEvents = serde_json::from_str(&pl).unwrap();
-                    println!("Message: {:?}", event_json);
                     send_actions_message(sender, &event_json);
 
                 }
@@ -110,7 +110,8 @@ fn handle_message<S: Sender>(sender: &mut S, message: Message) -> bool {
 }
 
 fn send_join_message<S: Sender>(sender: &mut S) {
-    let join_msg = defs::JoinMessage { event_type: "join".to_string(), team_name: "Serenity".to_string() };
+    let mut rng = rand::thread_rng();
+    let join_msg = defs::JoinMessage { event_type: "join".to_string(), team_name: format!("Serenity{}", rng.gen::<u8>()) };
     let join_string = serde_json::to_string(&join_msg).unwrap();
     let join_message = Message::text( join_string.to_string() );
     sender.send_message(&join_message).unwrap();
@@ -141,6 +142,7 @@ fn send_actions_message<S: Sender>(sender: &mut S, events: &defs::IncomingEvents
     let actions_string = serde_json::to_string(&stupid_actions).unwrap();
     let actions_message = Message::text( actions_string.to_string() );
     sender.send_message(&actions_message).unwrap();
+    println!("Sending some random messages");
 }
 
 // Random, doesn't care about the size of the board...
