@@ -15,43 +15,39 @@ static AGENT: &'static str = "rust-websocket";
 static GAME_HOST: &'static str = "localhost";
 static GAME_PORT: &'static str = "3000";
 
-fn main() {
-    println!("Using fuzzingserver {}", ADDR);
+fn connect() -> (websocket::sender::Sender<websocket::stream::WebSocketStream>, 
+                 websocket::receiver::Receiver<websocket::stream::WebSocketStream>) {
+    println!("Using location {}", ADDR);
     println!("Using agent {}", AGENT);
-
-    let mut game_on = true;
-    let mut state = State { started: false, bots: Vec::new() };
-
-    while game_on {
-        let url = Url::parse(format!("ws://{}:{}", GAME_HOST, GAME_PORT).as_ref()).unwrap();
-        let request = Client::connect(url).unwrap();
-        let response = request.send().unwrap();
-        match response.validate() {
-            Ok(()) => (),
-            Err(e) => {
-                println!("{:?}", e);
-                return;
-            }
+    let url = Url::parse(format!("ws://{}:{}", GAME_HOST, GAME_PORT).as_ref()).expect("Could not parse url, wtf");
+    let request = Client::connect(url).expect("Could not connect to server.");
+    let response = request.send().expect("Failed sending a request to server.");
+    match response.validate() {
+        Ok(()) => (),
+        Err(e) => {
+            println!("Failed to get a response, error: {:?}", e);
         }
+    }
+    return response.begin().split();
+}
 
-        let (mut sender, mut receiver) = response.begin().split();
-        for message in receiver.incoming_messages() {
-            let message: Message = match message {
-                Ok(message) => message,
-                Err(e) => {
-                    println!("Error: {:?}", e);
-                    let _ = sender.send_message(&Message::close());
-                    game_on = false;
-                    break;
-                }
-            };
+fn main() {
+    let (mut sender, mut receiver) = connect();
 
-            if !state.handle_message(&mut sender, message) {
-                game_on = false;
+    let mut state = State { started: false, bots: Vec::new() };
+    for message in receiver.incoming_messages() {
+        let message: Message = match message {
+            Ok(message) => message,
+            Err(e) => {
+                println!("Error: {:?}", e);
+                let _ = sender.send_message(&Message::close());
                 break;
             }
+        };
+
+        if !state.handle_message(&mut sender, message) {
+            break;
         }
-        println!("Loop");
     }
 }
 
