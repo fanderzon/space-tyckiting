@@ -18,7 +18,7 @@ pub struct Config  {
     pub no_wait: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub struct Pos {
     pub x: i16,
     pub y: i16,
@@ -77,6 +77,14 @@ pub struct IncomingConnected  {
     #[serde(rename="teamId")]
     pub team_id: i16,
     pub config: Config,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Start  {
+    pub config: Config,
+    pub you: Team,
+    #[serde(rename="otherTeams")]
+    pub other_teams: Vec<Team>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
