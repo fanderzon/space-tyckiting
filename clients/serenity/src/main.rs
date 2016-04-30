@@ -3,38 +3,17 @@ extern crate websocket;
 extern crate rand;
 
 use std::str::from_utf8;
-use websocket::client::request::Url;
-use websocket::{Client, Message, Sender, Receiver};
+use websocket::{Message, Sender, Receiver};
 use websocket::message::Type;
 use rand::Rng;
 
 mod defs;
-
-static ADDR: &'static str = "ws://localhost:3000";
-static AGENT: &'static str = "rust-websocket";
-static GAME_HOST: &'static str = "localhost";
-static GAME_PORT: &'static str = "3000";
-
-fn connect() -> (websocket::sender::Sender<websocket::stream::WebSocketStream>, 
-                 websocket::receiver::Receiver<websocket::stream::WebSocketStream>) {
-    println!("Using location {}", ADDR);
-    println!("Using agent {}", AGENT);
-    let url = Url::parse(format!("ws://{}:{}", GAME_HOST, GAME_PORT).as_ref()).expect("Could not parse url, wtf");
-    let request = Client::connect(url).expect("Could not connect to server.");
-    let response = request.send().expect("Failed sending a request to server.");
-    match response.validate() {
-        Ok(()) => (),
-        Err(e) => {
-            println!("Failed to get a response, error: {:?}", e);
-        }
-    }
-    return response.begin().split();
-}
+mod util;
 
 fn main() {
-    let (mut sender, mut receiver) = connect();
+    let mut state = State::new();
+    let (mut sender, mut receiver) = util::connect();
 
-    let mut state = State { started: false, bots: Vec::new() };
     for message in receiver.incoming_messages() {
         let message: Message = match message {
             Ok(message) => message,
@@ -56,14 +35,9 @@ fn send_join_message<S: Sender>(sender: &mut S) {
     let join_msg = defs::JoinMessage { event_type: "join".to_string(), team_name: format!("Serenity{}", rng.gen::<u8>()) };
     let join_string = serde_json::to_string(&join_msg).unwrap();
     let join_message = Message::text( join_string.to_string() );
-    sender.send_message(&join_message).unwrap();
+    sender.send_message(&join_message).expect("Sending join message failed.");
 }
-//
-// Random, doesn't care about the size of the board...
-fn get_random_pos() -> defs::Pos {
-    let mut rng = rand::thread_rng();
-    defs::Pos { x: rng.gen::<i16>(), y: rng.gen::<i16>() }
-}
+
 
 struct State {
     started: bool,
@@ -71,6 +45,9 @@ struct State {
 }
 
 impl State {
+    fn new() -> State {
+        return State { started: false, bots: Vec::new() };
+    }
     fn handle_message<S: Sender>(&mut self, sender: &mut S, message: Message) -> bool {
         print!("Got a message... ");
 
@@ -132,7 +109,7 @@ impl State {
             actions: self.bots.iter().map(|bot| defs::Action{
                 bot_id: bot.id,
                 action_type: "radar".to_string(),
-                pos: get_random_pos()
+                pos: util::get_random_pos()
             }).collect(),
         };
         let actions_string = serde_json::to_string(&stupid_actions).unwrap();
