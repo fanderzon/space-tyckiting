@@ -20,6 +20,7 @@ function socketSend(socket, type, message) {
     }
     typify.assert(type, message);
     return new Bluebird(function (resolve) { /* , reject */
+      console.log("sending", JSON.stringify(message));
         socket.send(JSON.stringify(message), function (error) {
             if (error) {
                 // TODO: reject and recover?
@@ -31,6 +32,13 @@ function socketSend(socket, type, message) {
     });
 }
 
+var nextTick = function() {};
+
+// Wait for input in server console to start next round
+process.stdin.on('data', function (text) {
+  nextTick();
+});
+
 function Round(allPlayers, nextStep, loopTime, noWait) {
 
     var players = _.where(allPlayers, {active: true}).map(function (player) {
@@ -38,15 +46,12 @@ function Round(allPlayers, nextStep, loopTime, noWait) {
     });
     var actedPlayers = [];
 
-    var timeout = setTimeout(function () {
-        nextStep();
-    }, loopTime);
+    nextTick = nextStep;
 
     function registerAction(player) {
         actedPlayers.push(player.teamId);
         if (noWait && _.isEmpty(_.difference(players, actedPlayers))) {
-            clearTimeout(timeout);
-            nextStep();
+            // nextStep();
         }
     }
 
@@ -116,6 +121,7 @@ function Game(config, keepAlive, ws, gameLogFile, onEndCallback) {
             });
 
             socket.on("message", function (rawData) {
+              console.log('message', rawData);
                 var data = JSON.parse(rawData);
                 if (data.type === "actions") {
                     if (!typify.check("actionsMessage", data)) {
@@ -126,7 +132,7 @@ function Game(config, keepAlive, ws, gameLogFile, onEndCallback) {
                     // TODO: check that data.roundId is current round id.
                     // Need to refactor a bit to make that possible :(
 
-                    console.log("%s: ", player.name, data.actions);
+                    // console.log("%s: ", player.name, data.actions);
                     if (!finished) {
                         player.actions = data.actions;
                         if (currentRound) {
@@ -253,6 +259,7 @@ function Game(config, keepAlive, ws, gameLogFile, onEndCallback) {
         function gameLoop(players, bots, asteroids, roundCounter, statistics, loopTime, noWait) {
             // TODO Does the old round need deleting?
             currentRound = new Round(players, function () {
+              console.log('roundCallback', roundCounter);
                 innerLoop(players, bots, asteroids, roundCounter, statistics);
             }, loopTime, noWait);
         }
