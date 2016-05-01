@@ -10,6 +10,7 @@ use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents};
 
 pub struct Ai {
     bots: Vec<Bot>,
+    round_id: i16,
 }
 
 #[derive(PartialEq)]
@@ -19,12 +20,28 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&self, events: &IncomingEvents) -> ActionsMessage {
+    fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
         return self.random_radars_action(events.round_id);
     }
 
     pub fn new(start: &Start) -> Ai {
-        return Ai { bots: start.you.bots.iter().map(Bot::new).collect() };
+        return Ai { bots: start.you.bots.iter().map(Bot::new).collect(), round_id: -1, };
+    }
+
+    fn random_radars_action(&self, round_id: i16) -> Vec<Action> {
+        return self.bots.iter().map(|bot| Action{
+            bot_id: bot.id,
+            action_type: "radar".to_string(),
+            pos: util::get_random_pos()
+        }).collect();
+    }
+
+    fn make_actions_message(&self, actions: Vec<Action>) -> ActionsMessage {
+        return ActionsMessage {
+            event_type: "actions".to_string(),
+            round_id: self.round_id,
+            actions: actions,
+        };
     }
 
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
@@ -39,7 +56,8 @@ impl Ai {
                     "events" => {
                         println!("Got som events!");
                         let event_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
-                        return Ok(self.make_decisions(&event_json));
+                        self.round_id = event_json.round_id;
+                        return Ok(self.make_actions_message(self.make_decisions(&event_json)));
                     }
                     "end" => {
                         println!("Got end message, we're ending!");
@@ -55,18 +73,6 @@ impl Ai {
             }
         }
         return Err(NoAction::Ignore);
-    }
-
-    fn random_radars_action(&self, round_id: i16) -> ActionsMessage {
-        return ActionsMessage {
-            event_type: "actions".to_string(),
-            round_id: round_id,
-            actions: self.bots.iter().map(|bot| Action{
-                bot_id: bot.id,
-                action_type: "radar".to_string(),
-                pos: util::get_random_pos()
-            }).collect(),
-        };
     }
 }
 

@@ -11,6 +11,10 @@ impl PartialEq for Pos {
 }
 
 impl Pos {
+    pub fn new(x: i16, y: i16) -> Pos {
+        return Pos {x: x, y: y};
+    }
+
     #[allow(dead_code)]
     pub fn distance(self, other: Pos) -> i16 {
         let dx: i16 = self.x - other.x;
@@ -39,6 +43,14 @@ impl Pos {
         }
 
         return result;
+    }
+
+    pub fn triangle_around(&self) -> (Pos, Pos, Pos) {
+        let x = self.x;
+        let y = self.y;
+        return (Pos::new(x-1, y+2),
+                Pos::new(x+2, y-1),
+                Pos::new(x-1, y-1));
     }
 }
 
