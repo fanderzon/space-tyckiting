@@ -3,26 +3,25 @@ extern crate serde; extern crate serde_json;
 use std::str::from_utf8;
 use util;
 use defs;
-use defs::{Start ,ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::{ActionsMessage, IncomingMessage, IncomingEvents};
 use websocket::Message;
 use websocket::message::Type;
 
 pub struct Ai {
-    started: bool,
     bots: Vec<Bot>,
 }
 
 #[derive(PartialEq)]
-pub enum What_to_do {
+pub enum NoAction {
     Ignore,
     Exit,
 }
 
 impl Ai {
     pub fn new(start: &defs::Start) -> Ai {
-        return Ai { started: false, bots: start.you.bots.iter().map(Bot::new).collect() };
+        return Ai { bots: start.you.bots.iter().map(Bot::new).collect() };
     }
-    pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, What_to_do> {
+    pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
         match message.opcode {
             Type::Text => {
                 println!("It's text!");
@@ -38,7 +37,7 @@ impl Ai {
                     }
                     "end" => {
                         println!("Got end message, we're ending!");
-                        return Err(What_to_do::Exit);
+                        return Err(NoAction::Exit);
                     }
                     ev => {
                         println!("Got unrecognized event type {}, ignoring.", ev);
@@ -49,7 +48,7 @@ impl Ai {
                 println!("Got a weird non-text message from server, ignoring.");
             }
         }
-        return Err(What_to_do::Ignore);
+        return Err(NoAction::Ignore);
     }
 
     fn make_decisions(&self, events: &defs::IncomingEvents) -> defs::ActionsMessage {

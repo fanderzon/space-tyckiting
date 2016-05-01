@@ -40,7 +40,7 @@ fn main() {
                 sender.send_message(&actions_message).expect("Sending actions message failed.");
             }
             Err(do_what) => {
-                if do_what == ai::What_to_do::Exit {
+                if do_what == ai::NoAction::Exit {
                     break;
                 }
             }
@@ -48,14 +48,12 @@ fn main() {
     }
 }
 
-// Handshake waits fora connected message, sends a join then returns.
-// It is intented that the is past the connected message afterwards.
 fn handshake<S: Sender>(sender: &mut S, message: &Message) {
     if message.opcode == Type::Text {
         let pl = from_utf8(&message.payload).unwrap();
         let message_json: defs::IncomingMessage = serde_json::from_str(&pl).unwrap();
         if message_json.event_type == "connected" {
-            let connected_json: defs::IncomingConnected = serde_json::from_str(&pl).unwrap();
+            //let connected_json: defs::IncomingConnected = serde_json::from_str(&pl).unwrap();
             println!("Got connected message, sending join.");
             sender.send_message(&join_message()).expect("Sending join message failed.");;
             println!("Now we wait for start.");
@@ -64,10 +62,8 @@ fn handshake<S: Sender>(sender: &mut S, message: &Message) {
     }
 }
 
-// Och hur fan kompilerar det här?
 fn get_start(message: Message) -> defs::Start {
     let pl = from_utf8(&message.payload).unwrap();
-    let message_json: defs::IncomingMessage = serde_json::from_str(&pl).unwrap();
     let start_json: defs::Start = serde_json::from_str(&pl).unwrap();
     return start_json;
 }
