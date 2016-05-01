@@ -3,6 +3,8 @@ pub struct Pos {
     pub x: i16,
     pub y: i16,
 }
+
+//TODO: Use #derive?
 impl Eq for Pos {}
 impl PartialEq for Pos {
     fn eq(&self, other: &Self) -> bool {
@@ -45,12 +47,13 @@ impl Pos {
         return result;
     }
 
-    pub fn triangle_around(&self) -> (Pos, Pos, Pos) {
+    // TODO: Generalize for shot radius
+    pub fn triangle(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;
-        return (Pos::new(x-1, y+2),
-                Pos::new(x+2, y-1),
-                Pos::new(x-1, y-1));
+        return vec![ Pos::new(x-1, y+2),
+                     Pos::new(x+2, y-1),
+                     Pos::new(x-1, y-1) ];
     }
 }
 

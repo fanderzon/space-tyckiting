@@ -21,15 +21,28 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
-        return self.random_radars_action(events.round_id);
+        return self.shootat_action(&Pos::new(0, 0));
     }
 
     pub fn new(start: &Start) -> Ai {
         return Ai { bots: start.you.bots.iter().map(Bot::new).collect(), round_id: -1, };
     }
 
-    fn random_radars_action(&self, round_id: i16) -> Vec<Action> {
-        return self.bots.iter().map(|bot| Action{
+    fn shootat_action(&self, target: &Pos) -> Vec<Action> {
+        return self.bots
+            .iter()
+            // TODO: Maybe add shuffle triangle here?
+            // TODO: Random shooting at middle
+            .zip(Pos::triangle(target).iter())
+            .map(|(bot, pos)| Action {
+                bot_id: bot.id,
+                action_type: "cannon".to_string(),
+                pos: *pos,
+            }).collect();
+    }
+
+    fn random_radars_action(&self) -> Vec<Action> {
+        return self.bots.iter().map(|bot| Action {
             bot_id: bot.id,
             action_type: "radar".to_string(),
             pos: util::get_random_pos()
