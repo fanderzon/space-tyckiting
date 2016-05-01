@@ -7,7 +7,7 @@ use defs::{Start ,ActionsMessage, IncomingMessage, IncomingEvents};
 use websocket::Message;
 use websocket::message::Type;
 
-struct Ai {
+pub struct Ai {
     started: bool,
     bots: Vec<Bot>,
 }
@@ -19,10 +19,10 @@ pub enum What_to_do {
 }
 
 impl Ai {
-    fn new(start: &defs::Start) -> Ai {
+    pub fn new(start: &defs::Start) -> Ai {
         return Ai { started: false, bots: start.you.bots.iter().map(Bot::new).collect() };
     }
-    fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, What_to_do> {
+    pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, What_to_do> {
         match message.opcode {
             Type::Text => {
                 println!("It's text!");
@@ -66,7 +66,7 @@ impl Ai {
     }
 }
 
-struct Bot {
+pub struct Bot {
     id: i16,
     name: String,
     alive: bool,

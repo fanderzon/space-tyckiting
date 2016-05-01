@@ -18,16 +18,8 @@ fn main() {
 
     let mut msg_iter = receiver.incoming_messages();
 
-    handshake(&mut sender, &mut msg_iter);
-    let start_msg = get_start(&mut msg_iter);   
-    let start_msg = match start_msg {
-        Ok(msg) => msg,
-        Err(e) => {
-            println!("Error: {:?}", e);
-            let _ = sender.send_message(&Message::close());
-            return;
-        }
-    };
+    handshake(&mut sender, &msg_iter.next().unwrap().unwrap());
+    let start_msg = get_start(msg_iter.next().unwrap().unwrap());   
 
     let mut ai = Ai::new(&start_msg);
 
@@ -58,43 +50,29 @@ fn main() {
 
 // Handshake waits fora connected message, sends a join then returns.
 // It is intented that the is past the connected message afterwards.
-fn handshake<S: Sender>(sender: S, msg_iter: ITERATOR_OF_MESSAGES) {
-    while true {
-        let message = msg_iter.next();
-
-        let message: Message = match message {
-            Some(message) => message,
-            None => {
-                println!("Error with handshake");
-                let _ = sender.send_message(&Message::close());
-                break;
-            }
-        };
-
-        if message.opcode == Type::Text {
-            let pl = from_utf8(&message.payload).unwrap();
-            let message_json: defs::IncomingMessage = serde_json::from_str(&pl).unwrap();
-            if message_json.event_type == "connected" {
-                let connected_json: defs::IncomingConnected = serde_json::from_str(&pl).unwrap();
-                println!("Got connected message, sending join.");
-                sender.send_message(&join_message()).expect("Sending join message failed.");;
-                println!("Now we wait for start.");
-                return;
-            }
+fn handshake<S: Sender>(sender: &mut S, message: &Message) {
+    if message.opcode == Type::Text {
+        let pl = from_utf8(&message.payload).unwrap();
+        let message_json: defs::IncomingMessage = serde_json::from_str(&pl).unwrap();
+        if message_json.event_type == "connected" {
+            let connected_json: defs::IncomingConnected = serde_json::from_str(&pl).unwrap();
+            println!("Got connected message, sending join.");
+            sender.send_message(&join_message()).expect("Sending join message failed.");;
+            println!("Now we wait for start.");
+            return;
         }
     }
 }
 
 // Och hur fan kompilerar det här?
-fn get_start<I: Iterator>(msg_iter: I) -> Result<defs::Start, ()> {
-    let message = try!(msg_iter.next());
+fn get_start(message: Message) -> defs::Start {
     let pl = from_utf8(&message.payload).unwrap();
     let message_json: defs::IncomingMessage = serde_json::from_str(&pl).unwrap();
     let start_json: defs::Start = serde_json::from_str(&pl).unwrap();
-    return Ok(start_json);
+    return start_json;
 }
 
-fn join_message() {
+fn join_message<'a>() -> Message<'a> {
     let mut rng = rand::thread_rng();
     let join_msg = defs::JoinMessage { event_type: "join".to_string(), team_name: format!("Serenity{}", rng.gen::<u8>()) };
     let join_string = serde_json::to_string(&join_msg).unwrap();
