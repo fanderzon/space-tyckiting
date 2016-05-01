@@ -11,6 +11,7 @@ impl PartialEq for Pos {
 }
 
 impl Pos {
+    #[allow(dead_code)]
     pub fn distance(self, other: Pos) -> i16 {
         let dx: i16 = self.x - other.x;
         let dy: i16 = self.y - other.y;
@@ -20,6 +21,7 @@ impl Pos {
         cmp::max( cmp::max(dx.abs(), dy.abs()), dz.abs())
     }
 
+    #[allow(dead_code)]
     pub fn neighbours(self, radius: i16) -> Vec<Pos> {
         let mut result: Vec<Pos> = Vec::new();
         let x_min = self.x - radius;

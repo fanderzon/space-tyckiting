@@ -14,7 +14,6 @@ use websocket::message::Type;
 use websocket::ws::dataframe::DataFrame;
 use rand::Rng;
 use ai::Ai;
-use ai::NoAction::{Exit, Ignore};
 
 fn main() {
     let (mut sender, mut receiver) = util::connect();
@@ -41,9 +40,9 @@ fn main() {
                 let actions_message = Message::text( actions_string.to_string() );
                 sender.send_message(&actions_message).expect("Sending actions message failed.");
             }
-            Err(do_what) => match do_what {
-                Exit => { break; },
-                Ignore => { continue; },
+                Err(do_what) => match do_what {
+                ai::NoAction::Exit => { break; },
+                ai::NoAction::Ignore => { continue; },
             }
         }
     }

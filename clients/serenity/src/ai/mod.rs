@@ -1,12 +1,12 @@
 extern crate serde; extern crate serde_json;
 
 use std::str::from_utf8;
-use util;
-use defs;
-use defs::{ActionsMessage, IncomingMessage, IncomingEvents};
 use websocket::Message;
 use websocket::message::Type;
 use position::Pos;
+use util;
+use defs;
+use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents};
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -19,9 +19,14 @@ pub enum NoAction {
 }
 
 impl Ai {
-    pub fn new(start: &defs::Start) -> Ai {
+    fn make_decisions(&self, events: &IncomingEvents) -> ActionsMessage {
+        return self.random_radars_action(events.round_id);
+    }
+
+    pub fn new(start: &Start) -> Ai {
         return Ai { bots: start.you.bots.iter().map(Bot::new).collect() };
     }
+
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
         match message.opcode {
             Type::Text => {
@@ -52,17 +57,16 @@ impl Ai {
         return Err(NoAction::Ignore);
     }
 
-    fn make_decisions(&self, events: &defs::IncomingEvents) -> defs::ActionsMessage {
-        let stupid_actions = defs::ActionsMessage {
+    fn random_radars_action(&self, round_id: i16) -> ActionsMessage {
+        return ActionsMessage {
             event_type: "actions".to_string(),
-            round_id: events.round_id,
-            actions: self.bots.iter().map(|bot| defs::Action{
+            round_id: round_id,
+            actions: self.bots.iter().map(|bot| Action{
                 bot_id: bot.id,
                 action_type: "radar".to_string(),
                 pos: util::get_random_pos()
             }).collect(),
         };
-        return stupid_actions;
     }
 }
 
