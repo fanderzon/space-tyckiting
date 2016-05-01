@@ -1,10 +1,12 @@
-extern crate serde; extern crate serde_json;
+extern crate serde;
+extern crate serde_json;
 extern crate websocket;
 extern crate rand;
 
 mod defs;
 mod util;
 mod ai;
+mod position;
 
 use std::str::from_utf8;
 use websocket::{Message, Sender, Receiver};

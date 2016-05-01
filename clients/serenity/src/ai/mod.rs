@@ -6,6 +6,7 @@ use defs;
 use defs::{ActionsMessage, IncomingMessage, IncomingEvents};
 use websocket::Message;
 use websocket::message::Type;
+use position::Pos;
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -69,7 +70,7 @@ pub struct Bot {
     id: i16,
     name: String,
     alive: bool,
-    pos: defs::Pos,
+    pos: Pos,
     hp: i16,
 }
 
