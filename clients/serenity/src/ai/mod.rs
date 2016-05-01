@@ -7,6 +7,7 @@ use position::Pos;
 use util;
 use defs;
 use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents};
+use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -36,7 +37,7 @@ impl Ai {
             .zip(Pos::triangle(target).iter())
             .map(|(bot, pos)| Action {
                 bot_id: bot.id,
-                action_type: "cannon".to_string(),
+                action_type: CANNON.to_string(),
                 pos: *pos,
             }).collect();
     }
@@ -44,14 +45,14 @@ impl Ai {
     fn random_radars_action(&self) -> Vec<Action> {
         return self.bots.iter().map(|bot| Action {
             bot_id: bot.id,
-            action_type: "radar".to_string(),
+            action_type: RADAR.to_string(),
             pos: util::get_random_pos()
         }).collect();
     }
 
     fn make_actions_message(&self, actions: Vec<Action>) -> ActionsMessage {
         return ActionsMessage {
-            event_type: "actions".to_string(),
+            event_type: ACTIONS.to_string(),
             round_id: self.round_id,
             actions: actions,
         };
@@ -66,13 +67,13 @@ impl Ai {
                 let message_json: IncomingMessage = serde_json::from_str(&pl).unwrap();
 
                 match message_json.event_type.as_ref() {
-                    "events" => {
+                    EVENTS => {
                         println!("Got som events!");
                         let event_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
                         self.round_id = event_json.round_id;
                         return Ok(self.make_actions_message(self.make_decisions(&event_json)));
                     }
-                    "end" => {
+                    END => {
                         println!("Got end message, we're ending!");
                         return Err(NoAction::Exit);
                     }

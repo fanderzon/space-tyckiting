@@ -3,6 +3,7 @@ extern crate serde_json;
 extern crate websocket;
 extern crate rand;
 
+mod strings;
 mod defs;
 mod util;
 mod ai;
@@ -13,6 +14,7 @@ use websocket::{Message, Sender, Receiver};
 use websocket::message::Type;
 use websocket::ws::dataframe::DataFrame;
 use rand::Rng;
+use strings::{CONNECTED, JOIN};
 use ai::Ai;
 use ai::NoAction::{Exit, Ignore};
 
@@ -53,7 +55,7 @@ fn handshake<S: Sender>(sender: &mut S, message: &Message) {
     if message.opcode == Type::Text {
         let pl = from_utf8(&message.payload).unwrap();
         let message_json: defs::IncomingMessage = serde_json::from_str(&pl).unwrap();
-        if message_json.event_type == "connected" {
+        if message_json.event_type == CONNECTED {
             //let connected_json: defs::IncomingConnected = serde_json::from_str(&pl).unwrap();
             println!("Got connected message, sending join.");
             sender.send_message(&join_message()).expect("Sending join message failed.");;
@@ -71,7 +73,7 @@ fn get_start(message: Message) -> defs::Start {
 
 fn join_message<'a>() -> Message<'a> {
     let mut rng = rand::thread_rng();
-    let join_msg = defs::JoinMessage { event_type: "join".to_string(), team_name: format!("Serenity{}", rng.gen::<u8>()) };
+    let join_msg = defs::JoinMessage { event_type: JOIN.to_string(), team_name: format!("Serenity{}", rng.gen::<u8>()) };
     let join_string = serde_json::to_string(&join_msg).unwrap();
     let join_message = Message::text( join_string.to_string() );
     return join_message;
