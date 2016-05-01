@@ -18,12 +18,6 @@ pub struct Config  {
     pub no_wait: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
-pub struct Pos {
-    pub x: i16,
-    pub y: i16,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Bot {
     #[serde(rename="botId")]

@@ -9,9 +9,14 @@ pub fn main() {
 
     let src = Path::new("src/defs/mod.rs.in");
     let dst = Path::new(&out_dir).join("defs.rs");
-
     let mut registry = syntex::Registry::new();
-
     serde_codegen::register(&mut registry);
     registry.expand("", &src, &dst).unwrap();
+
+    // Copy paste programming FTW!
+    let position_src = Path::new("src/position/mod.rs.in");
+    let position_dst = Path::new(&out_dir).join("position.rs");
+    let mut positionegistry = syntex::Registry::new();
+    serde_codegen::register(&mut positionegistry);
+    positionegistry.expand("", &position_src, &position_dst).unwrap();
 }

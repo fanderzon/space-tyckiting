@@ -1,14 +1,17 @@
-extern crate serde; extern crate serde_json;
+extern crate serde;
+extern crate serde_json;
 extern crate websocket;
 extern crate rand;
+
+mod defs;
+mod util;
+mod position;
 
 use std::str::from_utf8;
 use websocket::{Message, Sender, Receiver};
 use websocket::message::Type;
 use rand::Rng;
-
-mod defs;
-mod util;
+use position::{Pos};
 
 fn main() {
     let mut state = State::new();
@@ -123,7 +126,7 @@ struct Bot {
     id: i16,
     name: String,
     alive: bool,
-    pos: defs::Pos,
+    pos: Pos,
     hp: i16,
 }
 
@@ -138,5 +141,3 @@ impl Bot {
         };
     }
 }
-
-

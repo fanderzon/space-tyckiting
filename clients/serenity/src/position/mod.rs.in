@@ -1,0 +1,41 @@
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub struct Pos {
+    pub x: i16,
+    pub y: i16,
+}
+impl Eq for Pos {}
+impl PartialEq for Pos {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
+    }
+}
+
+impl Pos {
+    pub fn distance(self, other: Pos) -> i16 {
+        let dx: i16 = self.x - other.x;
+        let dy: i16 = self.y - other.y;
+        let dz: i16 = self.x + self.y - other.x - other.y;
+
+        // cmp::max only takes 2 args
+        cmp::max( cmp::max(dx.abs(), dy.abs()), dz.abs())
+    }
+
+    pub fn neighbours(self, radius: i16) -> Vec<Pos> {
+        let mut result: Vec<Pos> = Vec::new();
+        let x_min = self.x - radius;
+        let x_max = self.x + radius;
+        let y_min = self.y - radius;
+        let y_max = self.y + radius;
+
+        for x in x_min..x_max {
+            for y in y_min..y_max {
+                let new_pos = Pos { x: x, y: y };
+                if self.distance(new_pos) <= radius && self != new_pos {
+                    result.push(new_pos);
+                }
+            }
+        }
+
+        return result;
+    }
+}
