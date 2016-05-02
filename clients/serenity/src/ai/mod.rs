@@ -51,11 +51,11 @@ impl Ai {
             }).collect();
     }
 
-    fn random_radars_action(&self) -> Vec<Action> {
+    fn random_radars_action(&self, positions: &Vec<Pos>) -> Vec<Action> {
         return self.bots.iter().map(|bot| Action {
             bot_id: bot.id,
             action_type: RADAR.to_string(),
-            pos: util::get_random_pos()
+            pos: util::get_random_pos(&self.radar_positions)
         }).collect();
     }
 
