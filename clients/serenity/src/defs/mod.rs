@@ -15,6 +15,7 @@ pub enum Event {
     Damaged(DamagedEvent),
     Move(MoveEvent),
     Noaction(NoactionEvent),
+    Invalid,
 }
 
 pub fn parse_event(ev: &String) -> Event {
@@ -53,7 +54,7 @@ pub fn parse_event(ev: &String) -> Event {
             return Event::Noaction(specific_event);
         }
         _ => {
-            return Event::Noaction(NoactionEvent{botId: -1});
+            return Event::Invalid;
         }
     }
 }

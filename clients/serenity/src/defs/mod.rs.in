@@ -108,21 +108,24 @@ pub struct SomeEvent {
 // `hit` Bot has been hit. This might mean that you have been hit, or you hit another bot.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HitEvent {
-    pub botId: i16,
+    #[serde(rename="botId")]
+    pub bot_id: i16,
     pub source: i16,
 }
 
 // * `die` Bot has died. This might mean that you died, or that you killed another bot.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DieEvent {
-    pub botId: i16,
+    #[serde(rename="botId")]
+    pub bot_id: i16,
 }
 
 // * `see` Results seeing bots. You will never be included in this event.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SeeEvent {
     pub source: i16,
-    pub botId: i16,
+    #[serde(rename="botId")]
+    pub bot_id: i16,
     pub pos: Pos,
 }
 
@@ -135,26 +138,30 @@ pub struct EchoEvent {
 // * `detected` You will be notified that you have been seen or radared.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DetectedEvent {
-    pub botId: i16, 
+    #[serde(rename="botId")]
+    pub bot_id: i16, 
 }
 
 // * `damaged` Your bot was damaged
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DamagedEvent {
-    pub botId: i16,
+    #[serde(rename="botId")]
+    pub bot_id: i16,
     pub damage: i16, 
 }
 
 // * `move` One of your team's bots new position after a move action. Cannot move out of the map.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MoveEvent {
-    pub botId: i16,
+    #[serde(rename="botId")]
+    pub bot_id: i16,
     pub pos: Pos,
 }
 
 // * `noaction` Bot performed no actions.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NoactionEvent {
-    pub botId: i16, 
+    #[serde(rename="botId")]
+    pub bot_id: i16, 
 }
 
