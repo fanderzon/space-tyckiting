@@ -48,12 +48,20 @@ impl Pos {
     }
 
     // TODO: Generalize for shot radius
-    pub fn triangle(&self) -> Vec<Pos> {
+    pub fn triangle_down(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;
         return vec![ Pos::new(x-1, y+2),
                      Pos::new(x+2, y-1),
                      Pos::new(x-1, y-1) ];
+    }
+
+    pub fn triangle_up(&self) -> Vec<Pos> {
+        let x = self.x;
+        let y = self.y;
+        return vec![ Pos::new(x+1, y-2),
+                     Pos::new(x-2, y+1),
+                     Pos::new(x+1, y+1) ];
     }
 }
 

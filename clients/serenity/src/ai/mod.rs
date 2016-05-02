@@ -34,7 +34,7 @@ impl Ai {
             .iter()
             // TODO: Maybe add shuffle triangle here?
             // TODO: Random shooting at middle
-            .zip(Pos::triangle(target).iter())
+            .zip(Pos::triangle_down(target).iter())
             .map(|(bot, pos)| Action {
                 bot_id: bot.id,
                 action_type: CANNON.to_string(),
