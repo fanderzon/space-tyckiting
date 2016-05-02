@@ -22,14 +22,19 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
-        return self.shootat_action(&Pos::new(0, 0));
+        for event_json in &events.events {
+            match defs::parse_event(&event_json) {
+                _ => {}
+            }
+        }
+        return self.all_shoot_at_action(&Pos::new(0, 0));
     }
 
     pub fn new(start: &Start) -> Ai {
         return Ai { bots: start.you.bots.iter().map(Bot::new).collect(), round_id: -1, };
     }
 
-    fn shootat_action(&self, target: &Pos) -> Vec<Action> {
+    fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
         return self.bots
             .iter()
             // TODO: Maybe add shuffle triangle here?

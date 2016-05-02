@@ -98,11 +98,17 @@ pub struct IncomingEvents {
     pub you: Team,
     #[serde(rename="otherTeams")]
     pub other_teams: Vec<Team>,
+    pub events: Vec<SomeEvent>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SomeEvent {
     pub event: String,
+    #[serde(rename="botId")]
+    pub bot_id: Option<i16>,
+    pub source: Option<i16>,
+    pub pos: Option<Pos>,
+    pub damage: Option<i16>, 
 }
 
 // `hit` Bot has been hit. This might mean that you have been hit, or you hit another bot.

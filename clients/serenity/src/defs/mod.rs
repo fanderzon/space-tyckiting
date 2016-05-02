@@ -18,40 +18,52 @@ pub enum Event {
     Invalid,
 }
 
-pub fn parse_event(ev: &String) -> Event {
-    let general_json: SomeEvent = serde_json::from_str(ev).unwrap();
-    match general_json.event.as_ref() {
+pub fn parse_event(ev: &SomeEvent) -> Event {
+    match ev.event.as_ref() {
         HIT => {
-            let specific_event: HitEvent = serde_json::from_str(ev).unwrap();
-            return Event::Hit(specific_event);
+            return Event::Hit(HitEvent{
+                bot_id: ev.bot_id.unwrap(),
+                source: ev.source.unwrap(),
+            });
         }
         DIE => {
-            let specific_event: DieEvent = serde_json::from_str(ev).unwrap();
-            return Event::Die(specific_event);
+            return Event::Die(DieEvent{
+                bot_id: ev.bot_id.unwrap(),
+            });
         }
         SEE => {
-            let specific_event: SeeEvent = serde_json::from_str(ev).unwrap();
-            return Event::See(specific_event);
+            return Event::See(SeeEvent{
+                bot_id: ev.bot_id.unwrap(),
+                source: ev.source.unwrap(),
+                pos: ev.pos.unwrap(),
+            });
         }
         ECHO => {
-            let specific_event: EchoEvent = serde_json::from_str(ev).unwrap();
-            return Event::Echo(specific_event);
+            return Event::Echo(EchoEvent{
+                pos: ev.pos.unwrap(),
+            });
         }
         DETECTED => {
-            let specific_event: DetectedEvent = serde_json::from_str(ev).unwrap();
-            return Event::Detected(specific_event);
+            return Event::Detected(DetectedEvent{
+                bot_id: ev.bot_id.unwrap(),
+            });
         }
         DAMAGED => {
-            let specific_event: DamagedEvent = serde_json::from_str(ev).unwrap();
-            return Event::Damaged(specific_event);
+            return Event::Damaged(DamagedEvent{
+                bot_id: ev.bot_id.unwrap(),
+                damage: ev.damage.unwrap(),
+            });
         }
         MOVE => {
-            let specific_event: MoveEvent = serde_json::from_str(ev).unwrap();
-            return Event::Move(specific_event);
+            return Event::Move(MoveEvent{
+                bot_id: ev.bot_id.unwrap(),
+                pos: ev.pos.unwrap(),
+            });
         }
         NOACTION => {
-            let specific_event: NoactionEvent = serde_json::from_str(ev).unwrap();
-            return Event::Noaction(specific_event);
+            return Event::Noaction(NoactionEvent{
+                bot_id: ev.bot_id.unwrap(),
+            });
         }
         _ => {
             return Event::Invalid;
