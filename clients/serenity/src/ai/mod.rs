@@ -26,14 +26,17 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
+        for event_json in &events.events {
+            match defs::parse_event(&event_json) {
+                _ => {}
+            }
+        }
         // TODO: Replace with proper logic
         let random_num = util::get_rand_range(0, 2);
         match random_num {
-            0 => self.shootat_action(&util::get_random_pos(&self.game_map)),
+            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
             _ => self.random_radars_action(&self.radar_positions)
         }
-
-        // return self.shootat_action(&Pos::new(0, 0));
     }
 
     pub fn new(start: &defs::Start) -> Ai {
@@ -51,7 +54,7 @@ impl Ai {
         };
     }
 
-    fn shootat_action(&self, target: &Pos) -> Vec<Action> {
+    fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
         return self.bots
             .iter()
             // TODO: Maybe add shuffle triangle here?
