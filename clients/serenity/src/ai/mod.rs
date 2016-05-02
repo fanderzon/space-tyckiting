@@ -8,8 +8,11 @@ use websocket::Message;
 use websocket::message::Type;
 use position::Pos;
 
+mod radar;
+
 pub struct Ai {
     bots: Vec<Bot>,
+    radar_positions: Vec<Pos>,
 }
 
 #[derive(PartialEq)]
@@ -20,7 +23,12 @@ pub enum NoAction {
 
 impl Ai {
     pub fn new(start: &defs::Start) -> Ai {
-        return Ai { bots: start.you.bots.iter().map(Bot::new).collect() };
+        let mut radar: radar::Radar = radar::Radar::new();
+        let radar_positions = &radar.get_radar_positions(&start.config).clone();
+        return Ai {
+            bots: start.you.bots.iter().map(Bot::new).collect(),
+            radar_positions: radar_positions.clone()
+        };
     }
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
         match message.opcode {
@@ -85,4 +93,3 @@ impl Bot {
         };
     }
 }
-
