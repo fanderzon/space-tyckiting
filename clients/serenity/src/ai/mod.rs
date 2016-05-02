@@ -15,6 +15,7 @@ pub struct Ai {
     bots: Vec<Bot>,
     round_id: i16,
     radar_positions: Vec<Pos>,
+    game_map: Vec<Pos>,
 }
 
 #[derive(PartialEq)]
@@ -25,16 +26,28 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
-        return self.shootat_action(&Pos::new(0, 0));
+        // TODO: Replace with proper logic
+        let random_num = util::get_rand_range(0, 2);
+        match random_num {
+            0 => self.shootat_action(&util::get_random_pos(&self.game_map)),
+            _ => self.random_radars_action(&self.radar_positions)
+        }
+
+        // return self.shootat_action(&Pos::new(0, 0));
     }
 
     pub fn new(start: &defs::Start) -> Ai {
+        // TODO: separate into smaller functions to do set up
         let mut radar: radar::Radar = radar::Radar::new();
-        let radar_positions = &radar.get_radar_positions(&start.config).clone();
+        let radar_positions = &radar.get_radar_positions(&start.config);
+        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbours(&start.config.field_radius);
+        game_map.push(Pos { x: 0, y: 0 });
+
         return Ai {
             bots: start.you.bots.iter().map(Bot::new).collect(),
             round_id: -1,
             radar_positions: radar_positions.clone(),
+            game_map: game_map.clone()
         };
     }
 
