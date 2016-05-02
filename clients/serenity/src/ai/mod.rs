@@ -9,9 +9,13 @@ use defs;
 use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents};
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
 
+mod radar;
+
 pub struct Ai {
     bots: Vec<Bot>,
     round_id: i16,
+    radar_positions: Vec<Pos>,
+    game_map: Vec<Pos>,
 }
 
 #[derive(PartialEq)]
@@ -22,14 +26,35 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
-        return self.shootat_action(&Pos::new(0, 0));
+        for event_json in &events.events {
+            match defs::parse_event(&event_json) {
+                _ => {}
+            }
+        }
+        // TODO: Replace with proper logic
+        let random_num = util::get_rand_range(0, 2);
+        match random_num {
+            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
+            _ => self.random_radars_action(&self.radar_positions)
+        }
     }
 
-    pub fn new(start: &Start) -> Ai {
-        return Ai { bots: start.you.bots.iter().map(Bot::new).collect(), round_id: -1, };
+    pub fn new(start: &defs::Start) -> Ai {
+        // TODO: separate into smaller functions to do set up
+        let mut radar: radar::Radar = radar::Radar::new();
+        let radar_positions = &radar.get_radar_positions(&start.config);
+        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbours(&start.config.field_radius);
+        game_map.push(Pos { x: 0, y: 0 });
+
+        return Ai {
+            bots: start.you.bots.iter().map(Bot::new).collect(),
+            round_id: -1,
+            radar_positions: radar_positions.clone(),
+            game_map: game_map.clone()
+        };
     }
 
-    fn shootat_action(&self, target: &Pos) -> Vec<Action> {
+    fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
         return self.bots
             .iter()
             // TODO: Maybe add shuffle triangle here?
@@ -42,11 +67,11 @@ impl Ai {
             }).collect();
     }
 
-    fn random_radars_action(&self) -> Vec<Action> {
+    fn random_radars_action(&self, positions: &Vec<Pos>) -> Vec<Action> {
         return self.bots.iter().map(|bot| Action {
             bot_id: bot.id,
             action_type: RADAR.to_string(),
-            pos: util::get_random_pos()
+            pos: util::get_random_pos(&self.radar_positions)
         }).collect();
     }
 
@@ -109,4 +134,3 @@ impl Bot {
         };
     }
 }
-

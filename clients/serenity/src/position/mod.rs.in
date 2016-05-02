@@ -28,7 +28,7 @@ impl Pos {
     }
 
     #[allow(dead_code)]
-    pub fn neighbours(self, radius: i16) -> Vec<Pos> {
+    pub fn neighbours(&self, radius: &i16) -> Vec<Pos> {
         let mut result: Vec<Pos> = Vec::new();
         let x_min = self.x - radius;
         let x_max = self.x + radius;
@@ -38,13 +38,13 @@ impl Pos {
         for x in x_min..x_max {
             for y in y_min..y_max {
                 let new_pos = Pos { x: x, y: y };
-                if self.distance(new_pos) <= radius && self != new_pos {
+                if self.distance(new_pos) <= *radius && *self != new_pos {
                     result.push(new_pos);
                 }
             }
         }
 
-        return result;
+        result
     }
 
     // TODO: Generalize for shot radius

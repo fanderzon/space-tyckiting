@@ -8,3 +8,12 @@ pub const CANNON: &'static str = "cannon";
 pub const END: &'static str = "end";
 pub const EVENTS: &'static str = "events";
 pub const RADAR: &'static str = "radar";
+pub const HIT: &'static str = "hit";
+pub const DIE: &'static str = "die";
+pub const SEE: &'static str = "see";
+pub const ECHO: &'static str = "echo";
+// I actually discovered a spelling error right here.
+pub const DETECTED: &'static str = "detected";
+pub const DAMAGED: &'static str = "damaged";
+pub const MOVE: &'static str = "move";
+pub const NOACTION: &'static str = "noaction";

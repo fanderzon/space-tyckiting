@@ -30,7 +30,12 @@ pub fn connect() -> (websocket::sender::Sender<websocket::stream::WebSocketStrea
 }
 
 // Random, doesn't care about the size of the board...
-pub fn get_random_pos() -> Pos {
-    let mut rng = rand::thread_rng();
-    Pos { x: rng.gen::<i16>(), y: rng.gen::<i16>() }
+pub fn get_random_pos(positions: &Vec<Pos>) -> Pos {
+    let pos = rand::thread_rng().choose(&positions).unwrap();
+    pos.clone()
+    // Pos { x: rng.gen::<i16>(), y: rng.gen::<i16>() }
+}
+
+pub fn get_rand_range(min: i16, max: i16) -> i16 {
+    rand::thread_rng().gen_range(min, max)
 }
