@@ -1,17 +1,19 @@
 extern crate serde; extern crate serde_json;
 
 use std::str::from_utf8;
-use util;
-use defs;
-use defs::{ActionsMessage, IncomingMessage, IncomingEvents};
 use websocket::Message;
 use websocket::message::Type;
 use position::Pos;
+use util;
+use defs;
+use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents};
+use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
 
 mod radar;
 
 pub struct Ai {
     bots: Vec<Bot>,
+    round_id: i16,
     radar_positions: Vec<Pos>,
 }
 
@@ -22,14 +24,49 @@ pub enum NoAction {
 }
 
 impl Ai {
+    fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
+        return self.shootat_action(&Pos::new(0, 0));
+    }
+
     pub fn new(start: &defs::Start) -> Ai {
         let mut radar: radar::Radar = radar::Radar::new();
         let radar_positions = &radar.get_radar_positions(&start.config).clone();
         return Ai {
             bots: start.you.bots.iter().map(Bot::new).collect(),
-            radar_positions: radar_positions.clone()
+            round_id: -1,
+            radar_positions: radar_positions.clone(),
         };
     }
+
+    fn shootat_action(&self, target: &Pos) -> Vec<Action> {
+        return self.bots
+            .iter()
+            // TODO: Maybe add shuffle triangle here?
+            // TODO: Random shooting at middle
+            .zip(Pos::triangle_down(target).iter())
+            .map(|(bot, pos)| Action {
+                bot_id: bot.id,
+                action_type: CANNON.to_string(),
+                pos: *pos,
+            }).collect();
+    }
+
+    fn random_radars_action(&self) -> Vec<Action> {
+        return self.bots.iter().map(|bot| Action {
+            bot_id: bot.id,
+            action_type: RADAR.to_string(),
+            pos: util::get_random_pos()
+        }).collect();
+    }
+
+    fn make_actions_message(&self, actions: Vec<Action>) -> ActionsMessage {
+        return ActionsMessage {
+            event_type: ACTIONS.to_string(),
+            round_id: self.round_id,
+            actions: actions,
+        };
+    }
+
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
         match message.opcode {
             Type::Text => {
@@ -39,12 +76,13 @@ impl Ai {
                 let message_json: IncomingMessage = serde_json::from_str(&pl).unwrap();
 
                 match message_json.event_type.as_ref() {
-                    "events" => {
+                    EVENTS => {
                         println!("Got som events!");
                         let event_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
-                        return Ok(self.make_decisions(&event_json));
+                        self.round_id = event_json.round_id;
+                        return Ok(self.make_actions_message(self.make_decisions(&event_json)));
                     }
-                    "end" => {
+                    END => {
                         println!("Got end message, we're ending!");
                         return Err(NoAction::Exit);
                     }
@@ -58,19 +96,6 @@ impl Ai {
             }
         }
         return Err(NoAction::Ignore);
-    }
-
-    fn make_decisions(&self, events: &defs::IncomingEvents) -> defs::ActionsMessage {
-        let stupid_actions = defs::ActionsMessage {
-            event_type: "actions".to_string(),
-            round_id: events.round_id,
-            actions: self.bots.iter().map(|bot| defs::Action{
-                bot_id: bot.id,
-                action_type: "radar".to_string(),
-                pos: util::get_random_pos()
-            }).collect(),
-        };
-        return stupid_actions;
     }
 }
 
