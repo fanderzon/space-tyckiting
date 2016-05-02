@@ -5,7 +5,7 @@ use websocket::client::request::Url;
 use websocket::Client;
 
 use rand::Rng;
-use defs;
+use position::{Pos};
 
 static ADDR: &'static str = "ws://localhost:3000";
 static AGENT: &'static str = "rust-websocket";
@@ -13,7 +13,7 @@ static GAME_HOST: &'static str = "localhost";
 static GAME_PORT: &'static str = "3000";
 
 // Feel free to write a better type annotation. It's not easy.
-pub fn connect() -> (websocket::sender::Sender<websocket::stream::WebSocketStream>, 
+pub fn connect() -> (websocket::sender::Sender<websocket::stream::WebSocketStream>,
                  websocket::receiver::Receiver<websocket::stream::WebSocketStream>) {
     println!("Using location {}", ADDR);
     println!("Using agent {}", AGENT);
@@ -30,7 +30,8 @@ pub fn connect() -> (websocket::sender::Sender<websocket::stream::WebSocketStrea
 }
 
 // Random, doesn't care about the size of the board...
-pub fn get_random_pos() -> defs::Pos {
-    let mut rng = rand::thread_rng();
-    defs::Pos { x: rng.gen::<i16>(), y: rng.gen::<i16>() }
+pub fn get_random_pos(positions: &Vec<Pos>) -> Pos {
+    let pos = rand::thread_rng().choose(&positions).unwrap();
+    pos.clone()
+    // Pos { x: rng.gen::<i16>(), y: rng.gen::<i16>() }
 }
