@@ -45,6 +45,7 @@ program
     .option("-d, --delay <number>", "Loop delay", parseInt)
     .option("-o, --overdrive <bool>", "Start next round if all players ready", function (val) { return val === "true"; })
     .option("-f, --file [file]", "configuration file")
+    .option("-s, --step", "step through each turn")
     .parse(process.argv);
 
 /* eslint-disable no-multi-spaces */
@@ -91,8 +92,9 @@ server.timeout = 5000;
 server.listen(port);
 
 var wss = new WebSocketServer({server: server});
+var isStepped = program.step;
 
-var g = game(config, keepAlive, wss, gameLogFile, function () {
+var g = game(config, keepAlive, isStepped, wss, gameLogFile, function () {
     console.log("Shutting down...");
     wss.close();
     server.close();

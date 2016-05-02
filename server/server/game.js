@@ -33,6 +33,7 @@ function socketSend(socket, type, message) {
 }
 
 var nextTick = function() {};
+var stepThroughRounds = false;
 
 // Wait for input in server console to start next round
 process.stdin.on('data', function (text) {
@@ -45,14 +46,24 @@ function Round(allPlayers, nextStep, loopTime, noWait) {
         return player.teamId;
     });
     var actedPlayers = [];
+    var registerAction;
 
-    nextTick = nextStep;
-
-    function registerAction(player) {
+    if (stepThroughRounds) {
+      nextTick = nextStep;
+      registerAction = function registerAction(player) {
+        actedPlayers.push(player.teamId);
+      }
+    } else {
+      var timeout = setTimeout(function () {
+        nextStep();
+      }, loopTime);
+      registerAction = function registerAction(player) {
         actedPlayers.push(player.teamId);
         if (noWait && _.isEmpty(_.difference(players, actedPlayers))) {
-            // nextStep();
+          clearTimeout(timeout);
+          nextStep();
         }
+      }
     }
 
     function clear() {
@@ -67,12 +78,13 @@ function Round(allPlayers, nextStep, loopTime, noWait) {
     };
 }
 
-function Game(config, keepAlive, ws, gameLogFile, onEndCallback) {
+function Game(config, keepAlive, isStepped, ws, gameLogFile, onEndCallback) {
     var allPlayers = [];
     var spectators = [];
     var gameLog = [];
     var started = false;
     var finished = false;
+    stepThroughRounds = isStepped;
 
     var sockets = [];
 
