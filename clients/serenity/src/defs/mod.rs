@@ -2,10 +2,11 @@ extern crate serde;
 extern crate serde_json;
 
 use position::{Pos};
-use strings::{ HIT, DIE, SEE, ECHO, DETECTED, DAMAGED, MOVE, NOACTION }; 
+use strings::{ HIT, DIE, SEE, ECHO, DETECTED, DAMAGED, MOVE, NOACTION };
 
 include!(concat!(env!("OUT_DIR"), "/defs.rs"));
 
+#[derive(Debug)]
 pub enum Event {
     Hit(HitEvent),
     Die(DieEvent),
@@ -70,4 +71,3 @@ pub fn parse_event(ev: &SomeEvent) -> Event {
         }
     }
 }
-
