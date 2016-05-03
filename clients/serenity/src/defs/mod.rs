@@ -2,7 +2,7 @@ extern crate serde;
 extern crate serde_json;
 
 use position::{Pos};
-use strings::{ HIT, DIE, SEE, ECHO, DETECTED, DAMAGED, MOVE, NOACTION }; 
+use strings::{ HIT, DIE, SEE, RADARECHO, DETECTED, DAMAGED, MOVE, NOACTION }; 
 
 include!(concat!(env!("OUT_DIR"), "/defs.rs"));
 
@@ -38,7 +38,7 @@ pub fn parse_event(ev: &SomeEvent) -> Event {
                 pos: ev.pos.unwrap(),
             });
         }
-        ECHO => {
+        RADARECHO => {
             return Event::Echo(EchoEvent{
                 pos: ev.pos.unwrap(),
             });

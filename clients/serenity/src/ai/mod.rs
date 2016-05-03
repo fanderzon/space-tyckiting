@@ -31,22 +31,22 @@ pub enum NoAction {
 impl Ai {
     fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
         // TODO: Replace with proper logic
-        let random_num = util::get_rand_range(0, 2);
-        let mut actions = match random_num {
-            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
-            _ => self.random_radars_action(&self.radar_positions)
-        };
+        let mut actions = self.random_radars_action(&self.radar_positions);
 
         for event in events {
             match *event {
                 Damaged(ref ev) => {
-                    actions.clear();
                     println!("Evading on bot {}", ev.bot_id);
                     actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
+                }
+                Echo(ref ev) => {
+                    println!("Got echo, gonna shoot at it!");
+                    actions.append(&mut self.all_shoot_at_action(&ev.pos));
                 }
                 _ => {}
             }
         }
+
         return actions;
     }
 

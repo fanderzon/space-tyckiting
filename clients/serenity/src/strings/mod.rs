@@ -12,6 +12,7 @@ pub const HIT: &'static str = "hit";
 pub const DIE: &'static str = "die";
 pub const SEE: &'static str = "see";
 pub const ECHO: &'static str = "echo";
+pub const RADARECHO: &'static str = "radarEcho";
 // I actually discovered a spelling error right here.
 pub const DETECTED: &'static str = "detected";
 pub const DAMAGED: &'static str = "damaged";
