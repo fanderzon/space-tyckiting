@@ -6,7 +6,7 @@ use websocket::message::Type;
 use position::Pos;
 use util;
 use defs;
-use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents, Event, SomeEvent};
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
 
 mod radar;
@@ -16,6 +16,8 @@ pub struct Ai {
     round_id: i16,
     radar_positions: Vec<Pos>,
     game_map: Vec<Pos>,
+    // One entry per game round, could be a bit risky if rounds don't come in order
+    history: Vec<HistoryEntry>,
 }
 
 #[derive(PartialEq)]
@@ -34,8 +36,8 @@ impl Ai {
         // TODO: Replace with proper logic
         let random_num = util::get_rand_range(0, 2);
         match random_num {
-            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
-            _ => self.random_radars_action(&self.radar_positions)
+            0 => return self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
+            _ => return self.random_radars_action()
         }
     }
 
@@ -50,7 +52,8 @@ impl Ai {
             bots: start.you.bots.iter().map(Bot::new).collect(),
             round_id: -1,
             radar_positions: radar_positions.clone(),
-            game_map: game_map.clone()
+            game_map: game_map.clone(),
+            history: Vec::new(),
         };
     }
 
@@ -67,7 +70,7 @@ impl Ai {
             }).collect();
     }
 
-    fn random_radars_action(&self, positions: &Vec<Pos>) -> Vec<Action> {
+    fn random_radars_action(&self) -> Vec<Action> {
         return self.bots.iter().map(|bot| Action {
             bot_id: bot.id,
             action_type: RADAR.to_string(),
@@ -83,6 +86,13 @@ impl Ai {
         };
     }
 
+    fn parse_events(&self, events: &Vec<SomeEvent>) -> Vec<Event> {
+        events
+            .iter()
+            .map(|ev| defs::parse_event(&ev))
+            .collect::<Vec<Event>>()
+    }
+
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
         match message.opcode {
             Type::Text => {
@@ -95,8 +105,13 @@ impl Ai {
                     EVENTS => {
                         println!("Got som events!");
                         let event_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
+
+                        // Parse the events here so we can add them to history,
+                        // then pass the parsed events to make decisions
+                        let parsed_events = self.parse_events(&event_json.events);
+                        println!("Parsed events {:?}", parsed_events);
                         self.round_id = event_json.round_id;
-                        return Ok(self.make_actions_message(self.make_decisions(&event_json)));
+                        return Ok(self.make_actions_message(self.make_decisions(&parsed_events)));
                     }
                     END => {
                         println!("Got end message, we're ending!");
@@ -133,4 +148,10 @@ impl Bot {
             hp: def.hp.unwrap(),
         };
     }
+}
+
+#[derive(Debug)]
+pub struct HistoryEntry {
+    round_id: i16,
+    events: Vec<Event>
 }
