@@ -32,6 +32,7 @@ impl Ai {
                 _ => {}
             }
         }
+
         // TODO: Replace with proper logic
         let random_num = util::get_rand_range(0, 2);
         match random_num {
@@ -132,6 +133,7 @@ impl Ai {
                         let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
                         self.round_id = events_json.round_id;
                         let events = events_json.events.iter().map(defs::parse_event).collect();
+                        self.update_state(&events);
                         return Ok(self.make_actions_message(self.make_decisions(&events)));
                     }
                     END => {
