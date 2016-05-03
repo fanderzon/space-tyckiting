@@ -43,6 +43,10 @@ impl Ai {
                     println!("Got echo, gonna shoot at it!");
                     actions.append(&mut self.all_shoot_at_action(&ev.pos));
                 }
+                See(ref ev) => {
+                    println!("Saw something, gonna shoot at it!");
+                    actions.append(&mut self.all_shoot_at_action(&ev.pos));
+                }
                 _ => {}
             }
         }
