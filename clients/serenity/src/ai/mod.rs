@@ -32,25 +32,13 @@ impl Ai {
                 _ => {}
             }
         }
-        let mut actions = self.all_shoot_at_action(&util::get_random_pos(&self.game_map));
-        actions.append(&mut self.random_radars_action(&self.radar_positions));
-        actions.push(Action {
-            bot_id: 0,
-            action_type: "cannon".to_string(),
-            pos: Pos::new(0, 0),
-        });
-        actions.push(Action {
-            bot_id: 0,
-            action_type: "cannon".to_string(),
-            pos: Pos::new(0, 0),
-        });
-        actions.push(Action {
-            bot_id: 0,
-            action_type: "cannon".to_string(),
-            pos: Pos::new(0, 0),
-        });
 
-        return actions;
+        // TODO: Replace with proper logic
+        let random_num = util::get_rand_range(0, 2);
+        match random_num {
+            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
+            _ => self.random_radars_action(&self.radar_positions)
+        }
     }
 
     pub fn new(start: &defs::Start) -> Ai {
@@ -89,10 +77,10 @@ impl Ai {
         }).collect();
     }
 
+    // TODO: This does not actually need to be mutable
     fn make_actions_message(&self, mut actions: Vec<Action>) -> ActionsMessage {
-        // Apparently by "latest", futurice means "first in array". So we need to put our "latest"
-        // actions "first".
-        actions.reverse();
+        actions.reverse();  // Apparently by "latest", futurice means "first in array". So we need 
+                            // to put our "latest" actions "first".
         return ActionsMessage {
             event_type: ACTIONS.to_string(),
             round_id: self.round_id,
