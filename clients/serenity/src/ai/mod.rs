@@ -9,6 +9,7 @@ use defs;
 use defs::{Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
 use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
+use itertools::Itertools;
 
 mod radar;
 
@@ -184,6 +185,31 @@ impl Bot {
             pos: def.pos.unwrap(),
             hp: def.hp.unwrap(),
         };
+    }
+}
+
+trait History {
+    fn add(&mut self, round_id: &i16, events: &Vec<Event>);
+    fn get(&self, ev: Event, since: i16) -> Vec<(i16,Event)>;
+}
+
+impl History for Vec<HistoryEntry> {
+    fn add(&mut self, round_id: &i16, events: &Vec<Event>) {
+        println!("Events {:?}", events);
+        self.push(HistoryEntry {
+            round_id: *round_id,
+            events: events.iter().cloned().collect::<Vec<Event>>()
+        });
+    }
+
+    // Returns each matching event as a tuple with round_id as first value
+    fn get(&self, ev: Event, since: i16) -> Vec<(i16,Event)> {
+        let last_round = self.len() as i16 - 1;
+        self
+            .iter()
+            .filter(|he| he.round_id > last_round - since  )
+            .flat_map(|he| he.events.iter().cloned().map(|e| (last_round as i16, e)))
+            .collect()
     }
 }
 

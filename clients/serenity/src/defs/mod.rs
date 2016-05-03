@@ -6,7 +6,7 @@ use strings::{ HIT, DIE, SEE, ECHO, DETECTED, DAMAGED, MOVE, NOACTION };
 
 include!(concat!(env!("OUT_DIR"), "/defs.rs"));
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Event {
     Hit(HitEvent),
     Die(DieEvent),

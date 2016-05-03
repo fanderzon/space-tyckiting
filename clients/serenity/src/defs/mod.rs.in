@@ -112,7 +112,7 @@ pub struct SomeEvent {
 }
 
 // `hit` Bot has been hit. This might mean that you have been hit, or you hit another bot.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct HitEvent {
     #[serde(rename="botId")]
     pub bot_id: i16,
@@ -120,14 +120,14 @@ pub struct HitEvent {
 }
 
 // * `die` Bot has died. This might mean that you died, or that you killed another bot.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct DieEvent {
     #[serde(rename="botId")]
     pub bot_id: i16,
 }
 
 // * `see` Results seeing bots. You will never be included in this event.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct SeeEvent {
     pub source: i16,
     #[serde(rename="botId")]
@@ -136,20 +136,20 @@ pub struct SeeEvent {
 }
 
 // * `radarEcho` Results of radaring bots. You will never be included in this event.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct EchoEvent {
     pub pos: Pos,
 }
 
 // * `detected` You will be notified that you have been seen or radared.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct DetectedEvent {
     #[serde(rename="botId")]
     pub bot_id: i16,
 }
 
 // * `damaged` Your bot was damaged
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct DamagedEvent {
     #[serde(rename="botId")]
     pub bot_id: i16,
@@ -157,7 +157,7 @@ pub struct DamagedEvent {
 }
 
 // * `move` One of your team's bots new position after a move action. Cannot move out of the map.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct MoveEvent {
     #[serde(rename="botId")]
     pub bot_id: i16,
@@ -165,7 +165,7 @@ pub struct MoveEvent {
 }
 
 // * `noaction` Bot performed no actions.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct NoactionEvent {
     #[serde(rename="botId")]
     pub bot_id: i16,
