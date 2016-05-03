@@ -6,7 +6,8 @@ use websocket::message::Type;
 use position::Pos;
 use util;
 use defs;
-use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::{Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
 
 mod radar;
@@ -83,15 +84,38 @@ impl Ai {
         };
     }
 
-    fn update-state(&mut self, events: &Vec<Event>) {
+    // Purpose: go through events and update our state so it's up to date for decisionmaking later
+    fn update_state(&mut self, events: &Vec<Event>) {
         for event in events {
-            match event {
-                Move(ev) => {
-                    // TODO: Add bot updating
+            match *event {
+                Die(ref ev) => {
+                    if let Some(bot) = self.get_bot_mut(ev.bot_id) {
+                        bot.alive = false;
+                    } else {
+                        // TODO: Enemy bot died, this should be recorded somehow.
+                    }
                 }
+                See(ref ev) => {
+                    //TODO: Update some kind of data structure that tracks enemy movements.
+                }
+                Echo(ref ev) => {
+                    //TODO: Update some kind of data structure that tracks enemy movements.
+                }
+                Damaged(ref ev) => {
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    bot.hp -= ev.damage;
+                }
+                Move(ref ev) => {
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    bot.pos = ev.pos;
+                }
+                Noaction(ref ev) => {
+                    //TODO: Maybe we can use the knowledge that a bot is sleeping? To exploit bugs
+                    //in enemy code ;)
+                }
+                _ => {}
             }
         }
-
     }
 
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
