@@ -1,5 +1,5 @@
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub struct Config  {
     pub bots: i16,
     #[serde(rename="fieldRadius")]

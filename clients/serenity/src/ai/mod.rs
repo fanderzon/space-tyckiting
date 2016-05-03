@@ -6,9 +6,11 @@ use websocket::message::Type;
 use position::Pos;
 use util;
 use defs;
-use defs::{Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::{Start, Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvents};
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
+use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
+use rand;
+use rand::Rng;
 
 mod radar;
 
@@ -17,6 +19,7 @@ pub struct Ai {
     round_id: i16,
     radar_positions: Vec<Pos>,
     game_map: Vec<Pos>,
+    config: Config,
 }
 
 #[derive(PartialEq)]
@@ -27,18 +30,24 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
+        // TODO: Replace with proper logic
+        let random_num = util::get_rand_range(0, 2);
+        let mut actions = match random_num {
+            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
+            _ => self.random_radars_action(&self.radar_positions)
+        };
+
         for event in events {
-            match event {
+            match *event {
+                Damaged(ref ev) => {
+                    actions.clear();
+                    println!("Evading on bot {}", ev.bot_id);
+                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
+                }
                 _ => {}
             }
         }
-
-        // TODO: Replace with proper logic
-        let random_num = util::get_rand_range(0, 2);
-        match random_num {
-            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
-            _ => self.random_radars_action(&self.radar_positions)
-        }
+        return actions;
     }
 
     pub fn new(start: &defs::Start) -> Ai {
@@ -52,7 +61,19 @@ impl Ai {
             bots: start.you.bots.iter().map(Bot::new).collect(),
             round_id: -1,
             radar_positions: radar_positions.clone(),
-            game_map: game_map.clone()
+            game_map: game_map.clone(),
+            config: start.config.clone(),
+        };
+    }
+
+    fn evade_action(&self, bot: &Bot) -> Action {
+        let neighbours = bot.pos.neighbours(&self.config.moves_allowed); 
+        let move_to = *rand::thread_rng().choose(&neighbours).expect("Oh there were no neighbors? That's impossible.");
+        println!("MOVES: {}, {}, {}, {}", bot.pos.x, bot.pos.y, move_to.x, move_to.y);
+        return Action {
+            bot_id: bot.id,
+            action_type: MOVE.to_string(),
+            pos: move_to,
         };
     }
 
