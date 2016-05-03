@@ -83,6 +83,17 @@ impl Ai {
         };
     }
 
+    fn update-state(&mut self, events: &Vec<Event>) {
+        for event in events {
+            match event {
+                Move(ev) => {
+                    // TODO: Add bot updating
+                }
+            }
+        }
+
+    }
+
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
         match message.opcode {
             Type::Text => {
