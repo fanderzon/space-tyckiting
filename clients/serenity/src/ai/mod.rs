@@ -114,6 +114,14 @@ impl Ai {
         }
         return Err(NoAction::Ignore);
     }
+
+    fn get_bot(&self, id: i16) -> Option<&Bot> {
+        return self.bots.iter().find(|bot|bot.id == id);
+    }
+
+    fn get_bot_mut(&mut self, id: i16) -> Option<&mut Bot> {
+        return self.bots.iter_mut().find(|bot|bot.id == id);
+    }
 }
 
 pub struct Bot {
