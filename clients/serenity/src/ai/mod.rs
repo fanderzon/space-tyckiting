@@ -27,17 +27,17 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
-        for event_json in &events.events {
-            match defs::parse_event(&event_json) {
+    fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
+        for event in events {
+            match event {
                 _ => {}
             }
         }
         // TODO: Replace with proper logic
         let random_num = util::get_rand_range(0, 2);
         match random_num {
-            0 => return self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
-            _ => return self.random_radars_action()
+            0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
+            _ => self.random_radars_action(&self.radar_positions)
         }
     }
 
@@ -104,14 +104,10 @@ impl Ai {
                 match message_json.event_type.as_ref() {
                     EVENTS => {
                         println!("Got som events!");
-                        let event_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
-
-                        // Parse the events here so we can add them to history,
-                        // then pass the parsed events to make decisions
-                        let parsed_events = self.parse_events(&event_json.events);
-                        println!("Parsed events {:?}", parsed_events);
-                        self.round_id = event_json.round_id;
-                        return Ok(self.make_actions_message(self.make_decisions(&parsed_events)));
+                        let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
+                        self.round_id = events_json.round_id;
+                        let events = events_json.events.iter().map(defs::parse_event).collect();
+                        return Ok(self.make_actions_message(self.make_decisions(&events)));
                     }
                     END => {
                         println!("Got end message, we're ending!");
