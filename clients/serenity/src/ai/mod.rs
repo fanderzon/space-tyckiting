@@ -98,7 +98,10 @@ impl Ai {
         }).collect();
     }
 
-    fn make_actions_message(&self, actions: Vec<Action>) -> ActionsMessage {
+    // TODO: This does not actually need to be mutable
+    fn make_actions_message(&self, mut actions: Vec<Action>) -> ActionsMessage {
+        actions.reverse();  // Apparently by "latest", futurice means "first in array". So we need 
+                            // to put our "latest" actions "first".
         return ActionsMessage {
             event_type: ACTIONS.to_string(),
             round_id: self.round_id,
