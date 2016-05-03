@@ -25,9 +25,9 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&self, events: &IncomingEvents) -> Vec<Action> {
-        for event_json in &events.events {
-            match defs::parse_event(&event_json) {
+    fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
+        for event in events {
+            match event {
                 _ => {}
             }
         }
@@ -94,9 +94,10 @@ impl Ai {
                 match message_json.event_type.as_ref() {
                     EVENTS => {
                         println!("Got som events!");
-                        let event_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
-                        self.round_id = event_json.round_id;
-                        return Ok(self.make_actions_message(self.make_decisions(&event_json)));
+                        let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
+                        self.round_id = events_json.round_id;
+                        let events = events_json.events.iter().map(defs::parse_event).collect();
+                        return Ok(self.make_actions_message(self.make_decisions(&events)));
                     }
                     END => {
                         println!("Got end message, we're ending!");
