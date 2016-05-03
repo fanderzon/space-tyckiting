@@ -192,16 +192,29 @@ impl Bot {
 
 trait History {
     fn add(&mut self, round_id: &i16, events: &Vec<Event>);
+    fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
     fn get(&self, ev: Event, since: i16) -> Vec<(i16,Event)>;
 }
 
 impl History for Vec<HistoryEntry> {
     fn add(&mut self, round_id: &i16, events: &Vec<Event>) {
-        println!("Events {:?}", events);
+        let filtered_events = self.filter_relevant(events);
         self.push(HistoryEntry {
             round_id: *round_id,
-            events: events.iter().cloned().collect::<Vec<Event>>()
+            events: filtered_events
         });
+    }
+
+    fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event> {
+        events
+            .iter()
+            .cloned()
+            .filter(|e| {match *e {
+                    Noaction(ref ev) => false,
+                    Invalid => false,
+                    _ => true,
+                }})
+            .collect()
     }
 
     // Returns each matching event as a tuple with round_id as first value
@@ -213,6 +226,8 @@ impl History for Vec<HistoryEntry> {
             .flat_map(|he| he.events.iter().cloned().map(|e| (last_round as i16, e)))
             .collect()
     }
+
+
 }
 
 #[derive(Debug)]
