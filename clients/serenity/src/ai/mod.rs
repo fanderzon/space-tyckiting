@@ -6,7 +6,8 @@ use websocket::message::Type;
 use position::Pos;
 use util;
 use defs;
-use defs::{Start, Action, ActionsMessage, IncomingMessage, IncomingEvents, Event, SomeEvent};
+use defs::{Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
+use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
 
 mod radar;
@@ -33,11 +34,12 @@ impl Ai {
                 _ => {}
             }
         }
+
         // TODO: Replace with proper logic
         let random_num = util::get_rand_range(0, 2);
         match random_num {
             0 => self.all_shoot_at_action(&util::get_random_pos(&self.game_map)),
-            _ => self.random_radars_action(&self.radar_positions)
+            _ => self.random_radars_action()
         }
     }
 
@@ -78,7 +80,10 @@ impl Ai {
         }).collect();
     }
 
-    fn make_actions_message(&self, actions: Vec<Action>) -> ActionsMessage {
+    // TODO: This does not actually need to be mutable
+    fn make_actions_message(&self, mut actions: Vec<Action>) -> ActionsMessage {
+        actions.reverse();  // Apparently by "latest", futurice means "first in array". So we need
+                            // to put our "latest" actions "first".
         return ActionsMessage {
             event_type: ACTIONS.to_string(),
             round_id: self.round_id,
@@ -86,11 +91,38 @@ impl Ai {
         };
     }
 
-    fn parse_events(&self, events: &Vec<SomeEvent>) -> Vec<Event> {
-        events
-            .iter()
-            .map(|ev| defs::parse_event(&ev))
-            .collect::<Vec<Event>>()
+    // Purpose: go through events and update our state so it's up to date for decisionmaking later
+    fn update_state(&mut self, events: &Vec<Event>) {
+        for event in events {
+            match *event {
+                Die(ref ev) => {
+                    if let Some(bot) = self.get_bot_mut(ev.bot_id) {
+                        bot.alive = false;
+                    } else {
+                        // TODO: Enemy bot died, this should be recorded somehow.
+                    }
+                }
+                See(ref ev) => {
+                    //TODO: Update some kind of data structure that tracks enemy movements.
+                }
+                Echo(ref ev) => {
+                    //TODO: Update some kind of data structure that tracks enemy movements.
+                }
+                Damaged(ref ev) => {
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    bot.hp -= ev.damage;
+                }
+                Move(ref ev) => {
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    bot.pos = ev.pos;
+                }
+                Noaction(ref ev) => {
+                    //TODO: Maybe we can use the knowledge that a bot is sleeping? To exploit bugs
+                    //in enemy code ;)
+                }
+                _ => {}
+            }
+        }
     }
 
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
@@ -107,6 +139,7 @@ impl Ai {
                         let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
                         self.round_id = events_json.round_id;
                         let events = events_json.events.iter().map(defs::parse_event).collect();
+                        self.update_state(&events);
                         return Ok(self.make_actions_message(self.make_decisions(&events)));
                     }
                     END => {
@@ -123,6 +156,14 @@ impl Ai {
             }
         }
         return Err(NoAction::Ignore);
+    }
+
+    fn get_bot(&self, id: i16) -> Option<&Bot> {
+        return self.bots.iter().find(|bot|bot.id == id);
+    }
+
+    fn get_bot_mut(&mut self, id: i16) -> Option<&mut Bot> {
+        return self.bots.iter_mut().find(|bot|bot.id == id);
     }
 }
 
