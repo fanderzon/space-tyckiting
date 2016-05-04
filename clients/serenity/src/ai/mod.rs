@@ -34,7 +34,7 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
+    fn make_decisions(&self) -> Vec<Action> {
         let mut actions = self.random_radars_action();
         let curr_enemy_pos: &Vec<(Option<i16>, Pos)> = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
         let curr_enemy_know   = self.enemy_knowledge.last().expect("There should be a snapshot for enemy knowledge");
@@ -46,12 +46,13 @@ impl Ai {
             actions.append(&mut self.all_shoot_at_action(pos));
         } 
 
-        for (id, pos) in curr_enemy_know {
-            actions.push(self.evade_action(self.get_bot(id).unwrap()));
+        for tup in curr_enemy_know {
+            let (ref id, _) = *tup;
+            actions.push(self.evade_action(self.get_bot(*id).unwrap()));
         }
 
-        for id in *curr_damaged_bots {
-            actions.push(self.evade_action(self.get_bot(id).unwrap()));
+        for id in curr_damaged_bots {
+            actions.push(self.evade_action(self.get_bot(*id).unwrap()));
         }
 
         return actions;
@@ -175,7 +176,9 @@ impl Ai {
                         self.round_id = events_json.round_id;
                         let events = events_json.events.iter().map(defs::parse_event).collect();
                         self.update_state(&events);
-                        return Ok(self.make_actions_message(self.make_decisions(&events)));
+                        let decisions = self.make_decisions();
+                        let actions_message = self.make_actions_message(decisions);
+                        return Ok(actions_message);
                     }
                     END => {
                         println!("Got end message, we're ending!");
