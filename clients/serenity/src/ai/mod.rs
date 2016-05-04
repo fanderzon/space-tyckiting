@@ -82,6 +82,25 @@ impl Ai {
         };
     }
 
+    fn evade_spread(&self, bot: &Bot) -> Action {
+        let neighbors = bot.pos.neighbors(&self.config.moves_allowed); 
+        let otherbots = self.bots.iter()
+            .by_ref()
+            .filter(|otherbot| otherbot.id != bot.id)
+            .collect();
+            
+        let move_to = neighbors.iter().max_by_key(
+            |pos| otherbots.iter().min_by_key(
+                |otherbot| pos.distance(otherbot.pos)));
+
+        return Action {
+            bot_id: bot.id,
+            action_type: MOVE.to_string(),
+            pos: move_to,
+        };
+    }
+
+
     fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
         return self.bots
             .iter()
