@@ -19,6 +19,8 @@ pub struct Ai {
     radar_positions: Vec<Pos>,
     #[allow(dead_code)]
     game_map: Vec<Pos>,
+    // Snapshots of known enemy positions for every round, last being this one
+    enemy_poss: Vec<Vec<Pos>>,
     config: Config,
 }
 
@@ -32,6 +34,13 @@ impl Ai {
     fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
         // TODO: Replace with proper logic
         let mut actions = self.random_radars_action();
+        let curr_enemy_pos = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
+
+        // TODO: Handle multiple known positions better
+        if let Some(pos) = curr_enemy_pos.first() {
+            actions.append(&mut self.all_shoot_at_action(&pos));
+        } 
+            
 
         for event in events {
             match *event {
@@ -42,14 +51,6 @@ impl Ai {
                 Detected(ref ev) => {
                     println!("Evading on bot {}", ev.bot_id);
                     actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
-                }
-                Echo(ref ev) => {
-                    println!("Got echo, gonna shoot at it!");
-                    actions.append(&mut self.all_shoot_at_action(&ev.pos));
-                }
-                See(ref ev) => {
-                    println!("Saw something, gonna shoot at it!");
-                    actions.append(&mut self.all_shoot_at_action(&ev.pos));
                 }
                 _ => {}
             }
@@ -70,6 +71,7 @@ impl Ai {
             round_id: -1,
             radar_positions: radar_positions.clone(),
             game_map: game_map.clone(),
+            enemy_poss: Vec::new(),
             config: start.config.clone(),
         };
     }
@@ -112,6 +114,7 @@ impl Ai {
 
     // Purpose: go through events and update our state so it's up to date for decisionmaking later
     fn update_state(&mut self, events: &Vec<Event>) {
+        let mut enemy_positions = Vec::new();
         for event in events {
             match *event {
                 Die(ref ev) => {
@@ -121,11 +124,11 @@ impl Ai {
                         // TODO: Enemy bot died, this should be recorded somehow.
                     }
                 }
-                See(_) => {
-                    //TODO: Update some kind of data structure that tracks enemy movements.
+                See(ref ev) => {
+                    enemy_positions.push(ev.pos.clone());
                 }
-                Echo(_) => {
-                    //TODO: Update some kind of data structure that tracks enemy movements.
+                Echo(ref ev) => {
+                    enemy_positions.push(ev.pos.clone());
                 }
                 Damaged(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
@@ -142,6 +145,8 @@ impl Ai {
                 _ => {}
             }
         }
+
+        self.enemy_poss.push(enemy_positions);
     }
 
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
