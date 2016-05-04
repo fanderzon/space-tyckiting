@@ -58,7 +58,7 @@ impl Ai {
         // TODO: separate into smaller functions to do set up
         let mut radar: radar::Radar = radar::Radar::new();
         let radar_positions = &radar.get_radar_positions(&start.config);
-        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbours(&start.config.field_radius);
+        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbors(&start.config.field_radius);
         game_map.push(Pos { x: 0, y: 0 });
 
         return Ai {
@@ -71,8 +71,8 @@ impl Ai {
     }
 
     fn evade_action(&self, bot: &Bot) -> Action {
-        let neighbours = bot.pos.neighbours(&self.config.moves_allowed); 
-        let move_to = *rand::thread_rng().choose(&neighbours).expect("Oh there were no neighbors? That's impossible.");
+        let neighbors = bot.pos.neighbors(&self.config.moves_allowed); 
+        let move_to = *rand::thread_rng().choose(&neighbors).expect("Oh there were no neighbors? That's impossible.");
         println!("MOVES: {}, {}, {}, {}", bot.pos.x, bot.pos.y, move_to.x, move_to.y);
         return Action {
             bot_id: bot.id,
