@@ -20,7 +20,10 @@ pub struct Ai {
     #[allow(dead_code)]
     game_map: Vec<Pos>,
     // Snapshots of known enemy positions for every round, last being this one
-    enemy_poss: Vec<Vec<Pos>>,
+    enemy_poss: Vec<Vec<(Option<i16>, Pos)>>,
+    // Same as above, but opposite: What the enemy knows for sure about our positions
+    enemy_knowledge: Vec<Vec<(i16, Pos)>>,
+    damaged_bots: Vec<Vec<i16>>,
     config: Config,
 }
 
@@ -32,28 +35,23 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
-        // TODO: Replace with proper logic
         let mut actions = self.random_radars_action();
-        let curr_enemy_pos = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
+        let curr_enemy_pos: &Vec<(Option<i16>, Pos)> = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
+        let curr_enemy_know   = self.enemy_knowledge.last().expect("There should be a snapshot for enemy knowledge");
+        let curr_damaged_bots = self.damaged_bots.last().expect("There should be an damaged bots snapshot for this round!");
 
         // TODO: Handle multiple known positions better
-        if let Some(pos) = curr_enemy_pos.first() {
-            actions.append(&mut self.all_shoot_at_action(&pos));
+        if let Some(tup) = curr_enemy_pos.first() {
+            let (_, ref pos) = *tup;
+            actions.append(&mut self.all_shoot_at_action(pos));
         } 
-            
 
-        for event in events {
-            match *event {
-                Damaged(ref ev) => {
-                    println!("Evading on bot {}", ev.bot_id);
-                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
-                }
-                Detected(ref ev) => {
-                    println!("Evading on bot {}", ev.bot_id);
-                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
-                }
-                _ => {}
-            }
+        for (id, pos) in curr_enemy_know {
+            actions.push(self.evade_action(self.get_bot(id).unwrap()));
+        }
+
+        for id in *curr_damaged_bots {
+            actions.push(self.evade_action(self.get_bot(id).unwrap()));
         }
 
         return actions;
@@ -72,6 +70,9 @@ impl Ai {
             radar_positions: radar_positions.clone(),
             game_map: game_map.clone(),
             enemy_poss: Vec::new(),
+            // Same as above, but opposite: What the enemy knows for sure about our positions
+            enemy_knowledge: Vec::new(),
+            damaged_bots: Vec::new(),
             config: start.config.clone(),
         };
     }
@@ -115,6 +116,9 @@ impl Ai {
     // Purpose: go through events and update our state so it's up to date for decisionmaking later
     fn update_state(&mut self, events: &Vec<Event>) {
         let mut enemy_positions = Vec::new();
+        let mut enemy_knowledge = Vec::new();
+        let mut damaged_bots = Vec::new();
+
         for event in events {
             match *event {
                 Die(ref ev) => {
@@ -125,18 +129,22 @@ impl Ai {
                     }
                 }
                 See(ref ev) => {
-                    enemy_positions.push(ev.pos.clone());
+                    enemy_positions.push(( None, ev.pos.clone() ));
                 }
                 Echo(ref ev) => {
-                    enemy_positions.push(ev.pos.clone());
+                    enemy_positions.push(( None, ev.pos.clone() ));
                 }
                 Damaged(ref ev) => {
-                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
                     bot.hp -= ev.damage;
+                    damaged_bots.push(ev.bot_id);
                 }
                 Move(ref ev) => {
-                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
                     bot.pos = ev.pos;
+                }
+                Detected(ref ev) => {
+                    enemy_knowledge.push( (ev.bot_id, self.get_bot(ev.bot_id).expect("Not bot on our team with this id").pos.clone()) );
                 }
                 Noaction(_) => {
                     //TODO: Maybe we can use the knowledge that a bot is sleeping? To exploit bugs
@@ -146,7 +154,10 @@ impl Ai {
             }
         }
 
+        // TODO: Maybe remove dupes? There are edge cases...
         self.enemy_poss.push(enemy_positions);
+        self.enemy_knowledge.push(enemy_knowledge);
+        self.damaged_bots.push(damaged_bots);
     }
 
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
