@@ -38,11 +38,11 @@ impl Ai {
             match *event {
                 Damaged(ref ev) => {
                     println!("Evading on bot {}", ev.bot_id);
-                    actions.push(self.evade_spread(self.get_bot(ev.bot_id).unwrap()));
+                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
                 }
                 Detected(ref ev) => {
                     println!("Evading on bot {}", ev.bot_id);
-                    actions.push(self.evade_spread(self.get_bot(ev.bot_id).unwrap()));
+                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
                 }
                 Echo(ref ev) => {
                     println!("Got echo, gonna shoot at it!");
@@ -76,10 +76,10 @@ impl Ai {
     }
 
     fn evade_action(&self, bot: &Bot) -> Action {
-        if self.botsAlive() >= 2 {
-            return self.evade_spread();
+        if self.bots_alive() >= 2 {
+            return self.evade_spread(bot);
         } else {
-            return self.evade_random();
+            return self.evade_random(bot);
         }
     }
 
@@ -115,6 +115,9 @@ impl Ai {
         };
     }
 
+    fn bots_alive(&self) -> usize {
+        self.bots.iter().filter(|bot| bot.alive ).count()
+    }
 
     fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
         return self.bots
