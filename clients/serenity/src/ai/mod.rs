@@ -6,7 +6,7 @@ use websocket::message::Type;
 use position::Pos;
 use util;
 use defs;
-use defs::{Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
+use defs::{Config, Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
 use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
 use rand;
@@ -33,26 +33,44 @@ pub enum NoAction {
 impl Ai {
     fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
         // TODO: Replace with proper logic
-        let mut actions = self.random_radars_action(&self.radar_positions);
+        // let mut actions = self.random_radars_action();
+
+        // Populate default actions for all bots
+        // TODO: Do we need to noop dead bots? Seems like the server will just ignore.
+        let mut actions: Vec<Action> = Vec::populate(&self);
 
         for event in events {
             match *event {
                 Damaged(ref ev) => {
                     println!("Evading on bot {}", ev.bot_id);
-                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
+                    actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
                 }
                 Echo(ref ev) => {
+                    // Filter alive bots
+                    let mut radared = false;
+                    for bot in &self.bots {
+                        if bot.alive == true {
+                            if !radared {
+                                actions.set_action_for(bot.id, RADAR, ev.pos);
+                                radared = true;
+                            } else {
+                                actions.set_action_for(bot.id, CANNON, ev.pos.random_spread());
+                            }
+                        }
+                    }
                     println!("Got echo, gonna shoot at it!");
-                    actions.append(&mut self.all_shoot_at_action(&ev.pos));
+                    // actions.append(&mut self.all_shoot_at_action(&ev.pos));
+                    println!("Actions from echo {:?}", actions);
                 }
                 See(ref ev) => {
                     println!("Saw something, gonna shoot at it!");
-                    actions.append(&mut self.all_shoot_at_action(&ev.pos));
+                    // actions.append(&mut self.all_shoot_at_action(&ev.pos));
                 }
                 _ => {}
             }
         }
 
+        println!("Action is {:?}", actions);
         return actions;
     }
 
@@ -74,14 +92,18 @@ impl Ai {
     }
 
     fn evade_action(&self, bot: &Bot) -> Action {
-        let neighbours = bot.pos.neighbours(&self.config.moves_allowed);
-        let move_to = *rand::thread_rng().choose(&neighbours).expect("Oh there were no neighbors? That's impossible.");
+        let move_to = self.evade_pos(&bot);
         println!("MOVES: {}, {}, {}, {}", bot.pos.x, bot.pos.y, move_to.x, move_to.y);
         return Action {
             bot_id: bot.id,
             action_type: MOVE.to_string(),
             pos: move_to,
         };
+    }
+
+    fn evade_pos(&self, bot: &Bot) -> Pos {
+        let neighbours = bot.pos.neighbours(&self.config.moves_allowed);
+        *rand::thread_rng().choose(&neighbours).expect("Oh there were no neighbors? That's impossible.")
     }
 
     fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
@@ -94,6 +116,17 @@ impl Ai {
                 bot_id: bot.id,
                 action_type: CANNON.to_string(),
                 pos: *pos,
+            }).collect();
+    }
+
+    fn shoot_and_track_action(&self, target: &Pos) -> Vec<Action> {
+        return self.bots
+            .iter()
+            .zip(Pos::triangle_down(target).iter())
+            .map(|(bot, pos)| Action {
+                bot_id: bot.id,
+                action_type: if pos.x == 100 { RADAR.to_string() } else { CANNON.to_string() },
+                pos: if pos.x == 100 { target.clone() } else { *pos },
             }).collect();
     }
 
@@ -195,6 +228,7 @@ impl Ai {
     }
 }
 
+#[derive(Debug)]
 pub struct Bot {
     id: i16,
     name: String,
@@ -215,13 +249,13 @@ impl Bot {
     }
 }
 
-trait History {
+trait HistoryList {
     fn add(&mut self, round_id: &i16, events: &Vec<Event>);
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
     fn get(&self, ev: Event, since: i16) -> Vec<(i16,Event)>;
 }
 
-impl History for Vec<HistoryEntry> {
+impl HistoryList for Vec<HistoryEntry> {
     fn add(&mut self, round_id: &i16, events: &Vec<Event>) {
         let filtered_events = self.filter_relevant(events);
         self.push(HistoryEntry {
@@ -253,6 +287,40 @@ impl History for Vec<HistoryEntry> {
     }
 
 
+}
+
+trait ActionsList {
+    // Naming?
+    fn populate(ai: &Ai) -> Vec<Action>;
+    fn get_action_mut(&mut self, id: i16) -> Option<&mut Action>;
+    fn set_action_for(&mut self, id: i16, action: &str, pos: Pos);
+}
+
+impl ActionsList for Vec<Action> {
+    // Populate a default action for each bot with random radar
+    fn populate(ai: &Ai) -> Vec<Action> {
+        ai.bots
+            .iter()
+            .map(|b| Action {
+                bot_id: b.id,
+                action_type: RADAR.to_string(),
+                pos: util::get_random_pos(&ai.radar_positions)
+            })
+            .collect::<Vec<Action>>()
+    }
+
+    fn get_action_mut(&mut self, id: i16) -> Option<&mut Action> {
+        self
+            .iter_mut()
+            .find(|ac|ac.bot_id == id)
+    }
+
+    fn set_action_for(&mut self, id: i16, action_type: &str, pos: Pos) {
+        if let Some(action) = self.get_action_mut(id) {
+            action.action_type = action_type.to_string();
+            action.pos = pos;
+        }
+    }
 }
 
 #[derive(Debug)]

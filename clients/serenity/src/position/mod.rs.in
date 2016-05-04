@@ -28,6 +28,13 @@ impl Pos {
     }
 
     #[allow(dead_code)]
+    pub fn random_spread(&self) -> Pos {
+        let x = self.x;
+        let y = self.y;
+        return Pos::new(x-util::get_rand_range(0, 2), y+util::get_rand_range(0, 2));
+    }
+
+    #[allow(dead_code)]
     pub fn neighbours(&self, radius: &i16) -> Vec<Pos> {
         let mut result: Vec<Pos> = Vec::new();
         let x_min = self.x - radius;
