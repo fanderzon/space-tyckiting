@@ -6,7 +6,7 @@ use websocket::message::Type;
 use position::Pos;
 use util;
 use defs;
-use defs::{Start, Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::{Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvents};
 use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
 use rand;
@@ -18,6 +18,7 @@ pub struct Ai {
     bots: Vec<Bot>,
     round_id: i16,
     radar_positions: Vec<Pos>,
+    #[allow(dead_code)]
     game_map: Vec<Pos>,
     config: Config,
 }
@@ -31,7 +32,7 @@ pub enum NoAction {
 impl Ai {
     fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
         // TODO: Replace with proper logic
-        let mut actions = self.random_radars_action(&self.radar_positions);
+        let mut actions = self.random_radars_action();
 
         for event in events {
             match *event {
@@ -86,7 +87,7 @@ impl Ai {
             .iter()
             // TODO: Maybe add shuffle triangle here?
             // TODO: Random shooting at middle
-            .zip(Pos::triangle_down(target).iter())
+            .zip(Pos::triangle_smart(target).iter())
             .map(|(bot, pos)| Action {
                 bot_id: bot.id,
                 action_type: CANNON.to_string(),
@@ -94,7 +95,7 @@ impl Ai {
             }).collect();
     }
 
-    fn random_radars_action(&self, positions: &Vec<Pos>) -> Vec<Action> {
+    fn random_radars_action(&self) -> Vec<Action> {
         return self.bots.iter().map(|bot| Action {
             bot_id: bot.id,
             action_type: RADAR.to_string(),
@@ -124,10 +125,10 @@ impl Ai {
                         // TODO: Enemy bot died, this should be recorded somehow.
                     }
                 }
-                See(ref ev) => {
+                See(_) => {
                     //TODO: Update some kind of data structure that tracks enemy movements.
                 }
-                Echo(ref ev) => {
+                Echo(_) => {
                     //TODO: Update some kind of data structure that tracks enemy movements.
                 }
                 Damaged(ref ev) => {
@@ -138,7 +139,7 @@ impl Ai {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
                     bot.pos = ev.pos;
                 }
-                Noaction(ref ev) => {
+                Noaction(_) => {
                     //TODO: Maybe we can use the knowledge that a bot is sleeping? To exploit bugs
                     //in enemy code ;)
                 }
@@ -189,6 +190,7 @@ impl Ai {
     }
 }
 
+#[allow(dead_code)]
 pub struct Bot {
     id: i16,
     name: String,

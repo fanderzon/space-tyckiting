@@ -36,6 +36,7 @@ pub fn get_random_pos(positions: &Vec<Pos>) -> Pos {
     // Pos { x: rng.gen::<i16>(), y: rng.gen::<i16>() }
 }
 
+#[allow(dead_code)]
 pub fn get_rand_range(min: i16, max: i16) -> i16 {
     rand::thread_rng().gen_range(min, max)
 }
