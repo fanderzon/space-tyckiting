@@ -1,11 +1,16 @@
+use defs::Action;
+use strings::{MOVE};
+use position::Pos;
+use rand;
+use rand::Rng;
 use ai::*;
 
 impl Ai {
-    fn evade_action(&self, bot: &Bot) -> Action {
-        if self.botsAlive() >= 2 {
-            return self.evade_spread();
+    pub fn evade_action(&self, bot: &Bot) -> Action {
+        if self.bots_alive() >= 2 {
+            return self.evade_spread(bot);
         } else {
-            return self.evade_random();
+            return self.evade_random(bot);
         }
     }
 
