@@ -38,6 +38,8 @@ impl Ai {
         // Populate default actions for all bots
         // TODO: Do we need to noop dead bots? Seems like the server will just ignore.
         let mut actions: Vec<Action> = Vec::populate(&self);
+        let mut alive_bots = self.bots.iter().filter(|b| b.alive).map(|b| b.clone()).collect::<Vec<Bot>>();
+        let mut no_alive_bots = alive_bots.len() as i16;
 
         for event in events {
             match *event {
@@ -50,7 +52,7 @@ impl Ai {
                     let mut radared = false;
                     for bot in &self.bots {
                         if bot.alive == true {
-                            if !radared {
+                            if !radared && no_alive_bots > 1 {
                                 actions.set_action_for(bot.id, RADAR, ev.pos);
                                 radared = true;
                             } else {
@@ -246,6 +248,16 @@ impl Bot {
             pos: def.pos.unwrap(),
             hp: def.hp.unwrap(),
         };
+    }
+
+    fn clone(&self) -> Bot {
+        Bot {
+            id: self.id,
+            name: self.name.to_string(),
+            alive: self.alive,
+            pos: self.pos,
+            hp: self.hp
+        }
     }
 }
 
