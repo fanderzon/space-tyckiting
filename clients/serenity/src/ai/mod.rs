@@ -41,6 +41,10 @@ impl Ai {
         let mut alive_bots = self.bots.iter().filter(|b| b.alive).map(|b| b.clone()).collect::<Vec<Bot>>();
         let mut no_alive_bots = alive_bots.len() as i16;
 
+        // Try getting history events
+        let historic_echoes = self.history.get( Event::Echo(defs::EchoEvent{pos: Pos{x:0,y:0}}), 5 );
+        println!("Historic echo events {:?}", historic_echoes);
+
         for event in events {
             match *event {
                 Damaged(ref ev) => {
@@ -264,7 +268,7 @@ impl Bot {
 trait HistoryList {
     fn add(&mut self, round_id: &i16, events: &Vec<Event>);
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
-    fn get(&self, ev: Event, since: i16) -> Vec<(i16,Event)>;
+    fn get(&self, match_event: Event, since: i16) -> Vec<(Event, i16)>;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
@@ -289,13 +293,70 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     // Returns each matching event as a tuple with round_id as first value
-    fn get(&self, ev: Event, since: i16) -> Vec<(i16,Event)> {
+    fn get(&self, match_event: Event, since: i16) -> Vec<(Event, i16)> {
         let last_round = self.len() as i16 - 1;
-        self
+        let historic_events = self
             .iter()
             .filter(|he| he.round_id > last_round - since  )
-            .flat_map(|he| he.events.iter().cloned().map(|e| (last_round as i16, e)))
-            .collect()
+            .flat_map(|he| {
+                let mut round_ids: Vec<i16> = Vec::new();
+                for i in 0..he.events.len() {
+                    round_ids.push(he.round_id);
+                }
+                he.events
+                .iter()
+                .cloned()
+                .zip(round_ids)
+                .filter(|e| {match e.0 {
+                        Hit(ref ev) => {
+                            match match_event {
+                                Hit(ref ev) => true,
+                                _ => false
+                            }
+                        },
+                        Die(ref ev) => {
+                            match match_event {
+                                Die(ref ev) => true,
+                                _ => false
+                            }
+                        },
+                        See(ref ev) => {
+                            match match_event {
+                                See(ref ev) => true,
+                                _ => false
+                            }
+                        },
+                        Echo(ref ev) => {
+                            match match_event {
+                                Echo(ref ev) => true,
+                                _ => false
+                            }
+                        },
+                        Detected(ref ev) => {
+                            match match_event {
+                                Detected(ref ev) => true,
+                                _ => false
+                            }
+                        },
+                        Damaged(ref ev) => {
+                            match match_event {
+                                Damaged(ref ev) => true,
+                                _ => false
+                            }
+                        },
+                        Move(ref ev) => {
+                            match match_event {
+                                Move(ref ev) => true,
+                                _ => false
+                            }
+                        },
+                        _ => false,
+                    }})
+                // .map(|e| (&he.round_id as i16, e))
+                }
+            )
+            .collect();
+        return historic_events;
     }
 
 
