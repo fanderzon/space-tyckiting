@@ -8,7 +8,7 @@ use util;
 use defs;
 use defs::{Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvents};
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
+use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
 use lists::*;
 
 mod radar;
@@ -50,16 +50,16 @@ impl Ai {
         // TODO: Handle multiple known positions better
         if let Some(tup) = curr_enemy_pos.first() {
             let (_, ref pos) = *tup;
-            actions.append(&mut self.all_shoot_at_action(pos));
+            self.all_shoot_at_action(&mut actions, pos);
         }
 
         for tup in curr_enemy_know {
             let (ref id, _) = *tup;
-            actions.push(self.evade_action(self.get_bot(*id).unwrap()));
+            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
         }
 
         for id in curr_damaged_bots {
-            actions.push(self.evade_action(self.get_bot(*id).unwrap()));
+            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
         }
 
         return actions;
@@ -89,17 +89,19 @@ impl Ai {
         self.bots.iter().filter(|bot| bot.alive ).count()
     }
 
-    fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
-        return self.bots
+    fn all_shoot_at_action(&self, actions: &mut Vec<Action>, target: &Pos) {
+        self.bots
             .iter()
             // TODO: Maybe add shuffle triangle here?
             // TODO: Random shooting at middle
             .zip(Pos::triangle_smart(target).iter())
-            .map(|(bot, pos)| Action {
-                bot_id: bot.id,
-                action_type: CANNON.to_string(),
-                pos: *pos,
-            }).collect();
+            .map(|(bot, pos)| {
+                actions.set_action_for(bot.id, CANNON, *pos);
+                Action {
+                    bot_id: bot.id,
+                    action_type: CANNON.to_string(),
+                    pos: *pos,
+            }}).count();
     }
 
     fn random_radars_action(&self, actions: &mut Vec<Action>) {
