@@ -165,7 +165,9 @@ impl Ai {
             }
         }
 
-        // TODO: Maybe remove dupes? There are edge cases...
+        util::dedup_nosort(&mut enemy_positions);
+        util::dedup_nosort(&mut enemy_knowledge);
+        util::dedup_nosort(&mut damaged_bots);
         self.enemy_poss.push(enemy_positions);
         self.enemy_knowledge.push(enemy_knowledge);
         self.damaged_bots.push(damaged_bots);
