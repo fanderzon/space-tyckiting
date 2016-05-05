@@ -1,5 +1,8 @@
 extern crate serde; extern crate serde_json;
 
+mod radar;
+mod evade;
+
 use std::str::from_utf8;
 use websocket::Message;
 use websocket::message::Type;
@@ -10,9 +13,9 @@ use defs::{Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvent
 use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
 use lists::*;
+use ai::radar::Radar;
 
-mod radar;
-mod evade;
+
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -66,23 +69,26 @@ impl Ai {
     }
 
     pub fn new(start: &defs::Start) -> Ai {
-        // TODO: separate into smaller functions to do set up
-        let mut radar: radar::Radar = radar::Radar::new();
-        let radar_positions = &radar.get_radar_positions(&start.config);
-        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbors(&start.config.field_radius);
-        game_map.push(Pos { x: 0, y: 0 });
-
         return Ai {
-            bots: start.you.bots.iter().map(Bot::new).collect(),
+            bots: Ai::create_bots(&start.you.bots),
             round_id: -1,
-            radar_positions: radar_positions.clone(),
-            game_map: game_map.clone(),
+            radar_positions: Radar::new().get_radar_positions(&start.config),
+            game_map: Ai::create_game_map(start.config.field_radius),
             enemy_poss: Vec::new(),
-            // Same as above, but opposite: What the enemy knows for sure about our positions
             enemy_knowledge: Vec::new(),
             damaged_bots: Vec::new(),
             config: start.config.clone(),
         };
+    }
+
+    fn create_bots(j_bots: &Vec<defs::Bot>) -> Vec<Bot> {
+        j_bots.iter().map(Bot::new).collect()
+    }
+
+    fn create_game_map(field_radius: i16) -> Vec<Pos> {
+        let mut game_map = Pos { x: 0, y: 0 }.neighbors(&field_radius);
+        game_map.push(Pos { x: 0, y: 0 });
+        return game_map;
     }
 
     fn bots_alive(&self) -> usize {
