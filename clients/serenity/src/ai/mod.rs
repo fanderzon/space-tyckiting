@@ -13,11 +13,13 @@ use rand;
 use rand::Rng;
 
 mod radar;
+mod evade;
 
 pub struct Ai {
     bots: Vec<Bot>,
     round_id: i16,
     radar_positions: Vec<Pos>,
+    #[allow(dead_code)]
     game_map: Vec<Pos>,
     // One entry per game round, could be a bit risky if rounds don't come in order
     history: Vec<HistoryEntry>,
@@ -49,7 +51,11 @@ impl Ai {
             match *event {
                 Damaged(ref ev) => {
                     println!("Evading on bot {}", ev.bot_id);
-                    actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
+                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
+                }
+                Detected(ref ev) => {
+                    println!("Evading on bot {}", ev.bot_id);
+                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
                 }
                 Echo(ref ev) => {
                     // Filter alive bots
@@ -84,7 +90,7 @@ impl Ai {
         // TODO: separate into smaller functions to do set up
         let mut radar: radar::Radar = radar::Radar::new();
         let radar_positions = &radar.get_radar_positions(&start.config);
-        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbours(&start.config.field_radius);
+        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbors(&start.config.field_radius);
         game_map.push(Pos { x: 0, y: 0 });
 
         return Ai {
@@ -97,14 +103,8 @@ impl Ai {
         };
     }
 
-    fn evade_action(&self, bot: &Bot) -> Action {
-        let move_to = self.evade_pos(&bot);
-        println!("MOVES: {}, {}, {}, {}", bot.pos.x, bot.pos.y, move_to.x, move_to.y);
-        return Action {
-            bot_id: bot.id,
-            action_type: MOVE.to_string(),
-            pos: move_to,
-        };
+    fn bots_alive(&self) -> usize {
+        self.bots.iter().filter(|bot| bot.alive ).count()
     }
 
     fn evade_pos(&self, bot: &Bot) -> Pos {
@@ -117,7 +117,7 @@ impl Ai {
             .iter()
             // TODO: Maybe add shuffle triangle here?
             // TODO: Random shooting at middle
-            .zip(Pos::triangle_down(target).iter())
+            .zip(Pos::triangle_smart(target).iter())
             .map(|(bot, pos)| Action {
                 bot_id: bot.id,
                 action_type: CANNON.to_string(),
@@ -166,10 +166,10 @@ impl Ai {
                         // TODO: Enemy bot died, this should be recorded somehow.
                     }
                 }
-                See(ref ev) => {
+                See(_) => {
                     //TODO: Update some kind of data structure that tracks enemy movements.
                 }
-                Echo(ref ev) => {
+                Echo(_) => {
                     //TODO: Update some kind of data structure that tracks enemy movements.
                 }
                 Damaged(ref ev) => {
@@ -180,7 +180,7 @@ impl Ai {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
                     bot.pos = ev.pos;
                 }
-                Noaction(ref ev) => {
+                Noaction(_) => {
                     //TODO: Maybe we can use the knowledge that a bot is sleeping? To exploit bugs
                     //in enemy code ;)
                 }
@@ -234,7 +234,7 @@ impl Ai {
     }
 }
 
-#[derive(Debug)]
+#[allow(dead_code)]
 pub struct Bot {
     id: i16,
     name: String,

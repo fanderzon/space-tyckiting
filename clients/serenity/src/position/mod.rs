@@ -3,6 +3,8 @@ extern crate serde_json;
 
 use std::cmp;
 use std::ops::Add;
+use rand;
+use rand::Rng;
 
 use util;
 

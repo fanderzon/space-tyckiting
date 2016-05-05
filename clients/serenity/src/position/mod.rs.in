@@ -28,14 +28,7 @@ impl Pos {
     }
 
     #[allow(dead_code)]
-    pub fn random_spread(&self) -> Pos {
-        let x = self.x;
-        let y = self.y;
-        return Pos::new(x-util::get_rand_range(0, 2), y+util::get_rand_range(0, 2));
-    }
-
-    #[allow(dead_code)]
-    pub fn neighbours(&self, radius: &i16) -> Vec<Pos> {
+    pub fn neighbors(&self, radius: &i16) -> Vec<Pos> {
         let mut result: Vec<Pos> = Vec::new();
         let x_min = self.x - radius;
         let x_max = self.x + radius;
@@ -54,6 +47,13 @@ impl Pos {
         result
     }
 
+    pub fn triangle_smart(&self) -> Vec<Pos> {
+        return match rand::thread_rng().gen_range(0, 2) {
+            0 => { self.triangle_down() }
+            _ => { self.triangle_up() }
+        }
+    }
+
     // TODO: Generalize for shot radius
     pub fn triangle_down(&self) -> Vec<Pos> {
         let x = self.x;
@@ -63,6 +63,7 @@ impl Pos {
                      Pos::new(x-1, y-1) ];
     }
 
+    // TODO: Generalize for shot radius
     pub fn triangle_up(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;
