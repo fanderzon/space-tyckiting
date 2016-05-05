@@ -10,16 +10,21 @@ include!(concat!(env!("OUT_DIR"), "/position.rs"));
 
 impl Pos {
     pub fn triangle_smart(&self) -> Vec<Pos> {
-        return match rand::thread_rng().gen_range(0, 2) {
+        let mut triangle = match rand::thread_rng().gen_range(0, 2) {
             0 => { self.triangle_down() }
             _ => { self.triangle_up() }
+        };
+        // Shuffle so that the same will not be middled every time
+        let mut rng = rand::thread_rng();
+        rng.shuffle(&mut triangle[..]);
+        {
+            let p: &mut Pos = triangle.first_mut().expect("There whould be three points here!");
+            p.x = self.x;
+            p.y = self.y;
         }
-//        let rng = rand::thread_rng();
-//        rng.shuffle(triangle);
-//        let mpos = rng.choose(triangle);
-//        mpos.x = self.x;
-//        mpos.y = self.y;
-//        return triangle;
+        // Shuffle so that the same bot will not get the middled pos every time
+        rng.shuffle(&mut triangle[..]);
+        return triangle;
     }
 
     // TODO: Generalize for shot radius
