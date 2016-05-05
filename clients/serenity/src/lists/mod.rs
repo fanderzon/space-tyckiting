@@ -1,5 +1,4 @@
 use ai::*;
-use util;
 use defs::Action;
 use position::Pos;
 use strings::{ NOACTION };
