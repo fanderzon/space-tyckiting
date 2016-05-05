@@ -8,6 +8,7 @@ mod defs;
 mod util;
 mod ai;
 mod position;
+mod lists;
 
 use std::str::from_utf8;
 use websocket::{Message, Sender, Receiver};
@@ -23,7 +24,7 @@ fn main() {
     let mut msg_iter = receiver.incoming_messages();
 
     handshake(&mut sender, &msg_iter.next().unwrap().unwrap());
-    let start_msg = get_start(msg_iter.next().unwrap().unwrap());   
+    let start_msg = get_start(msg_iter.next().unwrap().unwrap());
 
     let mut ai = Ai::new(&start_msg);
 

@@ -9,8 +9,7 @@ use defs;
 use defs::{Config, Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
 use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
-use rand;
-use rand::Rng;
+use lists::*;
 
 mod radar;
 mod evade;
@@ -33,9 +32,9 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&self, events: &Vec<defs::Event>) -> Vec<Action> {
-        // TODO: Replace with proper logic
-        // let mut actions = self.random_radars_action();
+    fn make_decisions(&self) -> Vec<Action> {
+        // Populate an actions vector with a no action for each bot
+        let mut actions: Vec<Action> = Vec::populate(&self.bots);
 
         // Populate default actions for all bots
         // TODO: Do we need to noop dead bots? Seems like the server will just ignore.
@@ -166,18 +165,18 @@ impl Ai {
                         // TODO: Enemy bot died, this should be recorded somehow.
                     }
                 }
-                See(_) => {
-                    //TODO: Update some kind of data structure that tracks enemy movements.
+                See(ref ev) => {
+                    enemy_positions.push(( None, ev.pos.clone() ));
                 }
-                Echo(_) => {
-                    //TODO: Update some kind of data structure that tracks enemy movements.
+                Echo(ref ev) => {
+                    enemy_positions.push(( None, ev.pos.clone() ));
                 }
                 Damaged(ref ev) => {
-                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
                     bot.hp -= ev.damage;
                 }
                 Move(ref ev) => {
-                    let mut bot = self.get_bot_mut(ev.bot_id).expect("NO bot on our team with this id wtf?");
+                    let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
                     bot.pos = ev.pos;
                 }
                 Noaction(_) => {
@@ -236,11 +235,11 @@ impl Ai {
 
 #[allow(dead_code)]
 pub struct Bot {
-    id: i16,
-    name: String,
-    alive: bool,
-    pos: Pos,
-    hp: i16,
+    pub id: i16,
+    pub name: String,
+    pub alive: bool,
+    pub pos: Pos,
+    pub hp: i16,
 }
 
 impl Bot {
