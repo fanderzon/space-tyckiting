@@ -91,7 +91,7 @@ impl Ai {
 
     fn all_shoot_at_action(&self, actions: &mut Vec<Action>, target: &Pos) {
         self.bots
-            .iter()
+            .iter() 
             // TODO: Maybe add shuffle triangle here?
             // TODO: Random shooting at middle
             .zip(Pos::triangle_smart(target).iter())
