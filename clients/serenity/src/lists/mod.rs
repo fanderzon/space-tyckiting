@@ -1,26 +1,26 @@
 use ai::*;
 use util;
-use defs::{Action};
+use defs::Action;
 use position::Pos;
-use strings::{ RADAR };
+use strings::{ NOACTION };
 
 
 pub trait ActionsList {
     // Naming?
-    fn populate(ai: &Ai) -> Vec<Action>;
+    fn populate(bots: &Vec<Bot>) -> Vec<Action>;
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action>;
     fn set_action_for(&mut self, id: i16, action: &str, pos: Pos);
 }
 
 impl ActionsList for Vec<Action> {
     // Populate a default action for each bot with random radar
-    fn populate(ai: &Ai) -> Vec<Action> {
-        ai.bots
+    fn populate(bots: &Vec<Bot>) -> Vec<Action> {
+        bots
             .iter()
             .map(|b| Action {
                 bot_id: b.id,
-                action_type: RADAR.to_string(),
-                pos: util::get_random_pos(&ai.radar_positions)
+                action_type: NOACTION.to_string(),
+                pos: Pos { x: 0, y: 0 }
             })
             .collect::<Vec<Action>>()
     }

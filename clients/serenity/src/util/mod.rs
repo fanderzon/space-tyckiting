@@ -29,7 +29,7 @@ pub fn connect() -> (websocket::sender::Sender<websocket::stream::WebSocketStrea
     return response.begin().split();
 }
 
-// Random, doesn't care about the size of the board...
+#[allow(dead_code)]
 pub fn get_random_pos(positions: &Vec<Pos>) -> Pos {
     let pos = rand::thread_rng().choose(&positions).unwrap();
     pos.clone()

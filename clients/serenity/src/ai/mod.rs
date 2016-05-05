@@ -9,6 +9,7 @@ use defs;
 use defs::{Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvents};
 use defs::Event::*;
 use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR };
+use lists::*;
 
 mod radar;
 mod evade;
@@ -35,7 +36,13 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self) -> Vec<Action> {
-        let mut actions = self.random_radars_action();
+        // Populate an actions vector with a no action for each bot
+        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+
+        // Add random radar actions as default
+        self.random_radars_action(&mut actions);
+
+        // let mut actions = self.random_radars_action();
         let curr_enemy_pos: &Vec<(Option<i16>, Pos)> = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
         let curr_enemy_know   = self.enemy_knowledge.last().expect("There should be a snapshot for enemy knowledge");
         let curr_damaged_bots = self.damaged_bots.last().expect("There should be an damaged bots snapshot for this round!");
@@ -44,7 +51,7 @@ impl Ai {
         if let Some(tup) = curr_enemy_pos.first() {
             let (_, ref pos) = *tup;
             actions.append(&mut self.all_shoot_at_action(pos));
-        } 
+        }
 
         for tup in curr_enemy_know {
             let (ref id, _) = *tup;
@@ -95,17 +102,17 @@ impl Ai {
             }).collect();
     }
 
-    fn random_radars_action(&self) -> Vec<Action> {
-        return self.bots.iter().map(|bot| Action {
-            bot_id: bot.id,
-            action_type: RADAR.to_string(),
-            pos: util::get_random_pos(&self.radar_positions)
-        }).collect();
+    fn random_radars_action(&self, actions: &mut Vec<Action>) {
+        for bot in &self.bots {
+            if bot.alive {
+                actions.set_action_for(bot.id, RADAR, util::get_random_pos(&self.radar_positions));
+            }
+        }
     }
 
     // TODO: This does not actually need to be mutable
     fn make_actions_message(&self, mut actions: Vec<Action>) -> ActionsMessage {
-        actions.reverse();  // Apparently by "latest", futurice means "first in array". So we need 
+        actions.reverse();  // Apparently by "latest", futurice means "first in array". So we need
                             // to put our "latest" actions "first".
         return ActionsMessage {
             event_type: ACTIONS.to_string(),
@@ -207,11 +214,11 @@ impl Ai {
 
 #[allow(dead_code)]
 pub struct Bot {
-    id: i16,
-    name: String,
-    alive: bool,
-    pos: Pos,
-    hp: i16,
+    pub id: i16,
+    pub name: String,
+    pub alive: bool,
+    pub pos: Pos,
+    pub hp: i16,
 }
 
 impl Bot {
