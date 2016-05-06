@@ -18,3 +18,4 @@ pub const DETECTED: &'static str = "detected";
 pub const DAMAGED: &'static str = "damaged";
 pub const MOVE: &'static str = "move";
 pub const NOACTION: &'static str = "noaction";
+pub const INVALID: &'static str = "invalid";

@@ -8,7 +8,7 @@ use util;
 use defs;
 use defs::{Config, Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
+use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE, RADARECHO };
 use lists::*;
 
 mod radar;
@@ -44,7 +44,7 @@ impl Ai {
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
         // Try getting history events
-        let historic_echoes = self.history.get( Event::Echo(defs::EchoEvent{pos: Pos{x:0,y:0}}), 2 );
+        let historic_echoes = self.history.get_events( RADARECHO, 2 );
         println!("Historic echo events {:?}", historic_echoes);
 
         for event in events {

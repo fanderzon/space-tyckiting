@@ -1,6 +1,6 @@
 use ai::*;
 use util;
-use defs:: { Action, Event };
+use defs:: { Action, Event, get_event_name };
 use defs::Event::*;
 use position::Pos;
 use strings::{ NOACTION };
@@ -50,7 +50,7 @@ impl ActionsList for Vec<Action> {
 pub trait HistoryList {
     fn add(&mut self, round_id: &i16, events: &Vec<Event>);
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
-    fn get(&self, match_event: Event, since: i16) -> Vec<(Event, i16)>;
+    fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)>;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
@@ -58,7 +58,8 @@ impl HistoryList for Vec<HistoryEntry> {
         let filtered_events = self.filter_relevant(events);
         self.push(HistoryEntry {
             round_id: *round_id,
-            events: filtered_events
+            events: filtered_events,
+            actions: Vec::new()
         });
     }
 
@@ -75,12 +76,13 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     // Returns each matching event as a tuple with round_id as first value
-    fn get(&self, match_event: Event, since: i16) -> Vec<(Event, i16)> {
+    fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)> {
         let last_round = self.len() as i16 - 1;
         let historic_events = self
             .iter()
             .filter(|he| he.round_id > last_round - since  )
             .flat_map(|he| {
+                // Slightly ugly work around for returning a tuple with the round_id
                 let mut round_ids: Vec<i16> = Vec::new();
                 for i in 0..he.events.len() {
                     round_ids.push(he.round_id);
@@ -89,54 +91,8 @@ impl HistoryList for Vec<HistoryEntry> {
                 .iter()
                 .cloned()
                 .zip(round_ids)
-                .filter(|e| {match e.0 {
-                        Hit(ref ev) => {
-                            match match_event {
-                                Hit(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Die(ref ev) => {
-                            match match_event {
-                                Die(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        See(ref ev) => {
-                            match match_event {
-                                See(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Echo(ref ev) => {
-                            match match_event {
-                                Echo(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Detected(ref ev) => {
-                            match match_event {
-                                Detected(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Damaged(ref ev) => {
-                            match match_event {
-                                Damaged(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Move(ref ev) => {
-                            match match_event {
-                                Move(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        _ => false,
-                    }})
-                // .map(|e| (&he.round_id as i16, e))
-                }
-            )
+                .filter(|e| get_event_name(&e.0) == match_event)
+            })
             .collect();
         return historic_events;
     }
@@ -145,5 +101,6 @@ impl HistoryList for Vec<HistoryEntry> {
 #[derive(Debug)]
 pub struct HistoryEntry {
     pub round_id: i16,
-    pub events: Vec<Event>
+    pub events: Vec<Event>,
+    pub actions: Vec<Action>
 }
