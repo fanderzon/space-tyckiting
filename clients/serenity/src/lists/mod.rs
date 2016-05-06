@@ -9,6 +9,7 @@ use strings::{ NOACTION };
 pub trait ActionsList {
     // Naming?
     fn populate(bots: &Vec<Bot>) -> Vec<Action>;
+    fn get_action(&self, id: i16) -> Option<&Action>;
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action>;
     fn set_action_for(&mut self, id: i16, action: &str, pos: Pos);
 }
@@ -24,6 +25,12 @@ impl ActionsList for Vec<Action> {
                 pos: Pos { x: 0, y: 0 }
             })
             .collect::<Vec<Action>>()
+    }
+
+    fn get_action(&self, id: i16) -> Option<&Action> {
+        self
+            .iter()
+            .find(|ac|ac.bot_id == id)
     }
 
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action> {

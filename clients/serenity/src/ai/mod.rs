@@ -41,10 +41,10 @@ impl Ai {
 
         // Add random radar actions as default
         self.random_radars_action(&mut actions);
-        println!("ROUND: {:?}", self.round_id);
+        println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
         // Try getting history events
-        let historic_echoes = self.history.get( Event::Echo(defs::EchoEvent{pos: Pos{x:0,y:0}}), 5 );
+        let historic_echoes = self.history.get( Event::Echo(defs::EchoEvent{pos: Pos{x:0,y:0}}), 2 );
         println!("Historic echo events {:?}", historic_echoes);
 
         for event in events {
@@ -57,6 +57,15 @@ impl Ai {
                     println!("Evading on bot {}", ev.bot_id);
                     actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
                 }
+                Hit (ref ev) => {
+                    let target = ev.bot_id;
+                    match self.get_bot(target) {
+                        None => {
+                            // It wasn't out bot that was damaged, find the last action of the source
+                        },
+                        _ => {}
+                    }
+                },
                 Echo(ref ev) => {
                     println!("Got echo, gonna shoot at it!");
                     self.all_shoot_or_scan(&mut actions, ev.pos);

@@ -28,10 +28,10 @@ impl Pos {
     }
 
     #[allow(dead_code)]
-    pub fn random_spread(&self, pos: Pos) -> Pos {
+    pub fn random_spread(&self) -> Pos {
         Pos {
-            x: pos.x + util::get_rand_range(-2, 2),
-            y: pos.y + util::get_rand_range(-2, 2)
+            x: self.x + util::get_rand_range(-1, 1),
+            y: self.y + util::get_rand_range(-1, 1)
         }
     }
 
@@ -77,6 +77,56 @@ impl Pos {
             .cloned()
             .filter(|p| p.x.abs() <= *field_radius && p.y.abs() <= *field_radius)
             .collect()
+    }
+
+    #[allow(dead_code)]
+    pub fn clamp(&self, field_radius: &i16) -> Pos {
+        let center = Pos { x:0,y:0 };
+        let d = self.distance(center);
+        let radius = *field_radius;
+
+        // When in radius, we don't have to change anything
+        if d != 0 && d > radius {
+            // We clip the position to nearest in radius
+            let t = 1.0 * radius as f32 / d as f32;
+
+            let cx = self.x as f32 * t;
+            let cy = (-self.x - self.y) as f32 * t;
+            let cz = self.y as f32 * t;
+
+            // We need to round the floating point location to nearest hex
+            return self.round_cube_to_nearest_hex( cx, cy, cz);
+        }
+
+        return self.clone();
+    }
+
+    fn round_cube_to_nearest_hex( &self, x: f32, y: f32, z: f32 ) -> Pos {
+        // Simply rounding would work in most of the cases.
+        // The extra logic is there to handle few special cases,
+        // where a position would round to wrong hex and possibly out of area.
+        // The logic is explained here:
+        // http://www.redblobgames.com/grids/hexagons/#rounding
+
+        let mut rx = x.round() as i16;
+        let mut ry = y.round() as i16;
+        let mut rz = z.round() as i16;
+
+        let xDiff: f32 = {rx as f32 - x}.abs();
+        let yDiff: f32 = {ry as f32 - y}.abs();
+        let zDiff: f32 = {rz as f32 - z}.abs();
+
+        if xDiff > yDiff && xDiff > zDiff {
+            rx = -ry - rz;
+        } else if yDiff > zDiff {
+            ry = -rx - rz;
+        } else {
+            rz = -rx - ry;
+        }
+        Pos {
+            x: rx as i16,
+            y: rz as i16
+        }
     }
 
     pub fn triangle_smart(&self) -> Vec<Pos> {

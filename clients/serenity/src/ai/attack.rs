@@ -1,5 +1,5 @@
 use defs::Action;
-use strings::{ CANNON, RADAR };
+use strings::{ CANNON, RADAR, MOVE };
 use position::Pos;
 use rand;
 use rand::Rng;
@@ -10,14 +10,20 @@ use lists::*;
 impl Ai {
     // Takes the action array and a position to attack and modifies it
     pub fn all_shoot_or_scan(&self, actions: &mut Vec<Action>, target: Pos) {
-        let mut radared = false;
+        println!("All shoot or scan");
+        let mut radared: bool = false;
         for bot in &self.bots {
             if bot.alive == true {
-                if !radared && self.bots_alive() > 1 {
+                if Some(actions.get_action(bot.id)).unwrap().unwrap().action_type == MOVE.to_string() {
+                    // Already on the move, let's keep it that way
+                    println!("Already on the move, not changing bot {:?}", bot.id);
+                } else if radared == false && self.bots_alive() > 1 {
+                    println!("Setting attack radar for bot {:?} {}", bot.id, radared);
                     actions.set_action_for(bot.id, RADAR, target);
                     radared = true;
                 } else {
-                    actions.set_action_for(bot.id, CANNON, target.random_spread(target));
+                    actions.set_action_for(bot.id, CANNON, target.random_spread().clamp(&self.config.field_radius));
+                    println!("Setting attack cannon for bot {:?}", bot.id);
                 }
             }
         }
