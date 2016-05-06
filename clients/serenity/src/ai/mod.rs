@@ -13,6 +13,8 @@ use lists::*;
 
 mod radar;
 mod evade;
+mod scan;
+mod attack;
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -32,56 +34,43 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&self) -> Vec<Action> {
+    fn make_decisions(&self, events: Vec<Event>) -> Vec<Action> {
         // Populate an actions vector with a no action for each bot
         let mut actions: Vec<Action> = Vec::populate(&self.bots);
-
-        // Populate default actions for all bots
-        // TODO: Do we need to noop dead bots? Seems like the server will just ignore.
-        let mut actions: Vec<Action> = Vec::populate(&self);
         let mut alive_bots = self.bots.iter().filter(|b| b.alive).map(|b| b.clone()).collect::<Vec<Bot>>();
-        let mut no_alive_bots = alive_bots.len() as i16;
+
+        // Add random radar actions as default
+        self.random_radars_action(&mut actions);
+        println!("ROUND: {:?}", self.round_id);
 
         // Try getting history events
         let historic_echoes = self.history.get( Event::Echo(defs::EchoEvent{pos: Pos{x:0,y:0}}), 5 );
         println!("Historic echo events {:?}", historic_echoes);
 
         for event in events {
-            match *event {
+            match event {
                 Damaged(ref ev) => {
                     println!("Evading on bot {}", ev.bot_id);
-                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
+                    actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
                 }
                 Detected(ref ev) => {
                     println!("Evading on bot {}", ev.bot_id);
-                    actions.push(self.evade_action(self.get_bot(ev.bot_id).unwrap()));
+                    actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
                 }
                 Echo(ref ev) => {
-                    // Filter alive bots
-                    let mut radared = false;
-                    for bot in &self.bots {
-                        if bot.alive == true {
-                            if !radared && no_alive_bots > 1 {
-                                actions.set_action_for(bot.id, RADAR, ev.pos);
-                                radared = true;
-                            } else {
-                                actions.set_action_for(bot.id, CANNON, ev.pos.random_spread());
-                            }
-                        }
-                    }
                     println!("Got echo, gonna shoot at it!");
-                    // actions.append(&mut self.all_shoot_at_action(&ev.pos));
-                    println!("Actions from echo {:?}", actions);
+                    self.all_shoot_or_scan(&mut actions, ev.pos);
+                    // println!("Actions from echo {:?}", actions);
                 }
                 See(ref ev) => {
+                    self.all_shoot_or_scan(&mut actions, ev.pos);
                     println!("Saw something, gonna shoot at it!");
-                    // actions.append(&mut self.all_shoot_at_action(&ev.pos));
                 }
                 _ => {}
             }
         }
 
-        println!("Action is {:?}", actions);
+        println!("Action are {:?}", actions);
         return actions;
     }
 
@@ -104,43 +93,6 @@ impl Ai {
 
     fn bots_alive(&self) -> usize {
         self.bots.iter().filter(|bot| bot.alive ).count()
-    }
-
-    fn evade_pos(&self, bot: &Bot) -> Pos {
-        let neighbours = bot.pos.neighbours(&self.config.moves_allowed);
-        *rand::thread_rng().choose(&neighbours).expect("Oh there were no neighbors? That's impossible.")
-    }
-
-    fn all_shoot_at_action(&self, target: &Pos) -> Vec<Action> {
-        return self.bots
-            .iter()
-            // TODO: Maybe add shuffle triangle here?
-            // TODO: Random shooting at middle
-            .zip(Pos::triangle_smart(target).iter())
-            .map(|(bot, pos)| Action {
-                bot_id: bot.id,
-                action_type: CANNON.to_string(),
-                pos: *pos,
-            }).collect();
-    }
-
-    fn shoot_and_track_action(&self, target: &Pos) -> Vec<Action> {
-        return self.bots
-            .iter()
-            .zip(Pos::triangle_down(target).iter())
-            .map(|(bot, pos)| Action {
-                bot_id: bot.id,
-                action_type: if pos.x == 100 { RADAR.to_string() } else { CANNON.to_string() },
-                pos: if pos.x == 100 { target.clone() } else { *pos },
-            }).collect();
-    }
-
-    fn random_radars_action(&self) -> Vec<Action> {
-        return self.bots.iter().map(|bot| Action {
-            bot_id: bot.id,
-            action_type: RADAR.to_string(),
-            pos: util::get_random_pos(&self.radar_positions)
-        }).collect();
     }
 
     // TODO: This does not actually need to be mutable
@@ -166,10 +118,10 @@ impl Ai {
                     }
                 }
                 See(ref ev) => {
-                    enemy_positions.push(( None, ev.pos.clone() ));
+
                 }
                 Echo(ref ev) => {
-                    enemy_positions.push(( None, ev.pos.clone() ));
+
                 }
                 Damaged(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
@@ -206,7 +158,7 @@ impl Ai {
                         self.history.add(&self.round_id, &events);
                         println!("Loggin events {:?}", &events);
                         println!("Logging History {:?}", &self.history);
-                        return Ok(self.make_actions_message(self.make_decisions(&events)));
+                        return Ok(self.make_actions_message(self.make_decisions(events)));
                     }
                     END => {
                         println!("Got end message, we're ending!");
@@ -262,141 +214,4 @@ impl Bot {
             hp: self.hp
         }
     }
-}
-
-trait HistoryList {
-    fn add(&mut self, round_id: &i16, events: &Vec<Event>);
-    fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
-    fn get(&self, match_event: Event, since: i16) -> Vec<(Event, i16)>;
-}
-
-impl HistoryList for Vec<HistoryEntry> {
-    fn add(&mut self, round_id: &i16, events: &Vec<Event>) {
-        let filtered_events = self.filter_relevant(events);
-        self.push(HistoryEntry {
-            round_id: *round_id,
-            events: filtered_events
-        });
-    }
-
-    fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event> {
-        events
-            .iter()
-            .cloned()
-            .filter(|e| {match *e {
-                    Noaction(ref ev) => false,
-                    Invalid => false,
-                    _ => true,
-                }})
-            .collect()
-    }
-
-    // Returns each matching event as a tuple with round_id as first value
-    fn get(&self, match_event: Event, since: i16) -> Vec<(Event, i16)> {
-        let last_round = self.len() as i16 - 1;
-        let historic_events = self
-            .iter()
-            .filter(|he| he.round_id > last_round - since  )
-            .flat_map(|he| {
-                let mut round_ids: Vec<i16> = Vec::new();
-                for i in 0..he.events.len() {
-                    round_ids.push(he.round_id);
-                }
-                he.events
-                .iter()
-                .cloned()
-                .zip(round_ids)
-                .filter(|e| {match e.0 {
-                        Hit(ref ev) => {
-                            match match_event {
-                                Hit(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Die(ref ev) => {
-                            match match_event {
-                                Die(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        See(ref ev) => {
-                            match match_event {
-                                See(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Echo(ref ev) => {
-                            match match_event {
-                                Echo(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Detected(ref ev) => {
-                            match match_event {
-                                Detected(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Damaged(ref ev) => {
-                            match match_event {
-                                Damaged(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        Move(ref ev) => {
-                            match match_event {
-                                Move(ref ev) => true,
-                                _ => false
-                            }
-                        },
-                        _ => false,
-                    }})
-                // .map(|e| (&he.round_id as i16, e))
-                }
-            )
-            .collect();
-        return historic_events;
-    }
-
-
-}
-
-trait ActionsList {
-    // Naming?
-    fn populate(ai: &Ai) -> Vec<Action>;
-    fn get_action_mut(&mut self, id: i16) -> Option<&mut Action>;
-    fn set_action_for(&mut self, id: i16, action: &str, pos: Pos);
-}
-
-impl ActionsList for Vec<Action> {
-    // Populate a default action for each bot with random radar
-    fn populate(ai: &Ai) -> Vec<Action> {
-        ai.bots
-            .iter()
-            .map(|b| Action {
-                bot_id: b.id,
-                action_type: RADAR.to_string(),
-                pos: util::get_random_pos(&ai.radar_positions)
-            })
-            .collect::<Vec<Action>>()
-    }
-
-    fn get_action_mut(&mut self, id: i16) -> Option<&mut Action> {
-        self
-            .iter_mut()
-            .find(|ac|ac.bot_id == id)
-    }
-
-    fn set_action_for(&mut self, id: i16, action_type: &str, pos: Pos) {
-        if let Some(action) = self.get_action_mut(id) {
-            action.action_type = action_type.to_string();
-            action.pos = pos;
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct HistoryEntry {
-    round_id: i16,
-    events: Vec<Event>
 }

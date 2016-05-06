@@ -28,6 +28,14 @@ impl Pos {
     }
 
     #[allow(dead_code)]
+    pub fn random_spread(&self, pos: Pos) -> Pos {
+        Pos {
+            x: pos.x + util::get_rand_range(-2, 2),
+            y: pos.y + util::get_rand_range(-2, 2)
+        }
+    }
+
+    #[allow(dead_code)]
     pub fn neighbors(&self, radius: &i16) -> Vec<Pos> {
         let mut result: Vec<Pos> = Vec::new();
         let x_min = self.x - radius;
@@ -45,6 +53,30 @@ impl Pos {
         }
 
         result
+    }
+
+    #[allow(dead_code)]
+    pub fn clamped_neighbors(&self, radius: &i16, field_radius: &i16) -> Vec<Pos> {
+        let mut result: Vec<Pos> = Vec::new();
+        let x_min = self.x - radius;
+        let x_max = self.x + radius;
+        let y_min = self.y - radius;
+        let y_max = self.y + radius;
+
+        for x in x_min..x_max {
+            for y in y_min..y_max {
+                let new_pos = Pos { x: x, y: y };
+                if self.distance(new_pos) <= *radius && *self != new_pos {
+                    result.push(new_pos);
+                }
+            }
+        }
+
+        result
+            .iter()
+            .cloned()
+            .filter(|p| p.x.abs() <= *field_radius && p.y.abs() <= *field_radius)
+            .collect()
     }
 
     pub fn triangle_smart(&self) -> Vec<Pos> {

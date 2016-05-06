@@ -35,7 +35,7 @@ impl Ai {
     }
 
     fn evade_random_pos(&self, bot: &Bot) -> Pos {
-        let neighbors = bot.pos.neighbors(&self.config.moves_allowed);
+        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
         *rand::thread_rng()
             .choose(&neighbors)
             .expect("Oh there were no neighbors? That's impossible.")
@@ -53,7 +53,7 @@ impl Ai {
     }
 
     fn evade_spread_pos(&self, bot: &Bot) -> Pos {
-        let neighbors = bot.pos.neighbors(&self.config.moves_allowed);
+        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
         let otherbots: Vec<&Bot> = self.bots.iter()
             .by_ref()
             .filter(|otherbot| otherbot.id != bot.id)
