@@ -48,19 +48,45 @@ impl ActionsList for Vec<Action> {
 }
 
 pub trait HistoryList {
-    fn add(&mut self, round_id: &i16, events: &Vec<Event>);
+    fn add_events(&mut self, round_id: &i16, events: &Vec<Event>);
+    fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>);
+    fn get(&mut self, round_id: &i16) -> Option<&mut HistoryEntry>;
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)>;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
-    fn add(&mut self, round_id: &i16, events: &Vec<Event>) {
+    fn add_events(&mut self, round_id: &i16, events: &Vec<Event>) {
         let filtered_events = self.filter_relevant(events);
-        self.push(HistoryEntry {
-            round_id: *round_id,
-            events: filtered_events,
-            actions: Vec::new()
-        });
+        let mut new_entry: Option<HistoryEntry> = None;
+        match self.get(&round_id) {
+            Some(history_entry) => history_entry.events = filtered_events,
+            None => {
+                new_entry = Some(HistoryEntry {
+                    round_id: *round_id,
+                    events: filtered_events,
+                    actions: Vec::new()
+                });
+            }
+        }
+        match new_entry {
+            Some(history_entry) => self.push(history_entry),
+            None => ()
+        }
+    }
+
+    fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>) {
+        // self.push(HistoryEntry {
+        //     round_id: *round_id,
+        //     events: filtered_events,
+        //     actions: Vec::new()
+        // });
+    }
+
+    fn get(&mut self, round_id: &i16) -> Option<&mut HistoryEntry> {
+        self
+            .iter_mut()
+            .find(|he|he.round_id == *round_id)
     }
 
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event> {

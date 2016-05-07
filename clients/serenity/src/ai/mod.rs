@@ -164,7 +164,7 @@ impl Ai {
                         self.round_id = events_json.round_id;
                         let events = events_json.events.iter().map(defs::parse_event).collect();
                         self.update_state(&events);
-                        self.history.add(&self.round_id, &events);
+                        self.history.add_events(&self.round_id, &events);
                         println!("Loggin events {:?}", &events);
                         println!("Logging History {:?}", &self.history);
                         return Ok(self.make_actions_message(self.make_decisions(events)));
