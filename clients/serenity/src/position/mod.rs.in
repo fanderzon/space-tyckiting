@@ -75,7 +75,7 @@ impl Pos {
         result
             .iter()
             .cloned()
-            .filter(|p| p.x.abs() <= *field_radius && p.y.abs() <= *field_radius)
+            .map(|p| p.clamp(&field_radius))
             .collect()
     }
 

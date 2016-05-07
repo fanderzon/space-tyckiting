@@ -1,9 +1,10 @@
-use defs::Action;
-use strings::{MOVE};
+use defs::{ Action, Event };
+use strings::{DETECTED, DAMAGED, MOVE};
 use position::Pos;
 use rand;
 use rand::Rng;
 use ai::*;
+use lists::*;
 
 impl Ai {
     #[allow(dead_code)]
@@ -20,6 +21,22 @@ impl Ai {
             return self.evade_spread_pos(bot);
         } else {
             return self.evade_random_pos(bot);
+        }
+    }
+
+    pub fn evade_if_needed(&self, actions: &mut Vec<Action>) {
+        // Let's evade if we were seen in the last two turns
+        let mut evade_events = self.history.get_events( DETECTED, 2 );
+        evade_events.append(&mut self.history.get_events( DAMAGED, 2 ));
+
+        println!("evade_if_needed, evade events: {:?}", evade_events);
+
+        for ev in evade_events {
+            match ev.0 {
+                Event::Detected(ref ev) => actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap())),
+                Event::Damaged(ref ev) => actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap())),
+                _ => ()
+            }
         }
     }
 

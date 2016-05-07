@@ -8,7 +8,7 @@ use util;
 use defs;
 use defs::{Config, Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE, RADARECHO };
+use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE, RADARECHO, DETECTED, DAMAGED, SEE, HIT };
 use lists::*;
 
 mod radar;
@@ -19,7 +19,7 @@ mod attack;
 pub struct Ai {
     bots: Vec<Bot>,
     round_id: i16,
-    radar_positions: Vec<Pos>,
+    radar_positions: (i16, Vec<Pos>),
     #[allow(dead_code)]
     game_map: Vec<Pos>,
     // One entry per game round, could be a bit risky if rounds don't come in order
@@ -35,49 +35,70 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: Vec<Event>) -> Vec<Action> {
-        // Populate an actions vector with a no action for each bot
-        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+        // Populate an actions vector with a default action for each bot
+        let mut actions: Vec<Action> = Vec::populate(&self.bots, &self.radar_positions.1);
         let mut alive_bots = self.bots.iter().filter(|b| b.alive).map(|b| b.clone()).collect::<Vec<Bot>>();
+        println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
         // Add random radar actions as default
         self.random_radars_action(&mut actions);
-        println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
-        // Try getting history events
-        let historic_echoes = self.history.get_events( RADARECHO, 2 );
-        println!("Historic echo events {:?}", historic_echoes);
+        // Evade if needed
+        self.evade_if_needed(&mut actions);
 
-        for event in events {
-            match event {
-                Damaged(ref ev) => {
-                    println!("Evading on bot {}", ev.bot_id);
-                    actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
-                }
-                Detected(ref ev) => {
-                    println!("Evading on bot {}", ev.bot_id);
-                    actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
-                }
-                Hit (ref ev) => {
-                    let target = ev.bot_id;
-                    match self.get_bot(target) {
-                        None => {
-                            // It wasn't out bot that was damaged, find the last action of the source
-                        },
-                        _ => {}
-                    }
-                },
-                Echo(ref ev) => {
-                    println!("Got echo, gonna shoot at it!");
-                    self.all_shoot_or_scan(&mut actions, ev.pos);
-                    // println!("Actions from echo {:?}", actions);
-                }
-                See(ref ev) => {
-                    self.all_shoot_or_scan(&mut actions, ev.pos);
-                    println!("Saw something, gonna shoot at it!");
-                }
-                _ => {}
-            }
-        }
+        self.attack_and_scan_if_target(&mut actions);
+
+        // // Try getting history events
+        // let mut evade_events = self.history.get_events( DETECTED, 2 );
+        // evade_events.append(&mut self.history.get_events( DETECTED, 2 ));
+        //
+        // let mut attack_events = self.history.get_events( RADARECHO, 2 );
+        // attack_events.append( &mut self.history.get_events( SEE, 2 ) );
+        // attack_events.append(&mut self.history
+        //     .get_events( HIT, 2)
+        //     .filter(|(ref ev,ref round_id)| self.bots
+        //         .iter()
+        //         .find(|&ref bot| bot.id == ev.bot_id)
+        //      ));
+        //
+        // // evade_events
+        // //     .iter()
+        // //     .map(||)
+        //
+        // let echoes = self.history.get_events( RADARECHO, 2 );
+        // println!("Historic echo events {:?}", echoes);
+        //
+        // for event in events {
+        //     match event {
+        //         Damaged(ref ev) => {
+        //             println!("Evading on bot {}", ev.bot_id);
+        //             actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
+        //         }
+        //         Detected(ref ev) => {
+        //             println!("Evading on bot {}", ev.bot_id);
+        //             actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap()));
+        //         }
+        //         Hit (ref ev) => {
+        //             let target = ev.bot_id;
+        //             match self.get_bot(target) {
+        //                 None => {
+        //                     // It wasn't out bot that was damaged, find the last action of the source
+        //                 },
+        //                 _ => {}
+        //             }
+        //         },
+        //         Echo(ref ev) => {
+        //             println!("Got echo, gonna shoot at it!");
+        //             self.all_shoot_or_scan(&mut actions, ev.pos);
+        //             // println!("Actions from echo {:?}", actions);
+        //         }
+        //         See(ref ev) => {
+        //             self.all_shoot_or_scan(&mut actions, ev.pos);
+        //             println!("Saw something, gonna shoot at it!");
+        //         }
+        //         _ => {}
+        //     }
+        // }
 
         println!("Action are {:?}", actions);
         return actions;
@@ -93,7 +114,7 @@ impl Ai {
         return Ai {
             bots: start.you.bots.iter().map(Bot::new).collect(),
             round_id: -1,
-            radar_positions: radar_positions.clone(),
+            radar_positions: (0, radar_positions.clone()),
             game_map: game_map.clone(),
             history: Vec::new(),
             config: start.config.clone(),
@@ -165,9 +186,9 @@ impl Ai {
                         let events = events_json.events.iter().map(defs::parse_event).collect();
                         self.update_state(&events);
                         self.history.add_events(&self.round_id, &events);
-                        println!("Loggin events {:?}", &events);
-                        println!("Logging History {:?}", &self.history);
-                        return Ok(self.make_actions_message(self.make_decisions(events)));
+                        let actions: Vec<Action> = self.make_decisions(events);
+                        self.history.add_actions(&self.round_id, &actions);
+                        return Ok(self.make_actions_message(actions));
                     }
                     END => {
                         println!("Got end message, we're ending!");

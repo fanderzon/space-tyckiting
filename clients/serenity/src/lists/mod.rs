@@ -3,12 +3,12 @@ use util;
 use defs:: { Action, Event, get_event_name };
 use defs::Event::*;
 use position::Pos;
-use strings::{ NOACTION };
+use strings::{ RADAR };
 
 
 pub trait ActionsList {
     // Naming?
-    fn populate(bots: &Vec<Bot>) -> Vec<Action>;
+    fn populate(bots: &Vec<Bot>, radar_positions: &Vec<Pos>) -> Vec<Action>;
     fn get_action(&self, id: i16) -> Option<&Action>;
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action>;
     fn set_action_for(&mut self, id: i16, action: &str, pos: Pos);
@@ -16,13 +16,13 @@ pub trait ActionsList {
 
 impl ActionsList for Vec<Action> {
     // Populate a default action for each bot with random radar
-    fn populate(bots: &Vec<Bot>) -> Vec<Action> {
+    fn populate(bots: &Vec<Bot>, radar_positions: &Vec<Pos>) -> Vec<Action> {
         bots
             .iter()
             .map(|b| Action {
                 bot_id: b.id,
-                action_type: NOACTION.to_string(),
-                pos: Pos { x: 0, y: 0 }
+                action_type: RADAR.to_string(),
+                pos: util::get_random_pos(radar_positions)
             })
             .collect::<Vec<Action>>()
     }
@@ -65,7 +65,7 @@ impl HistoryList for Vec<HistoryEntry> {
                 new_entry = Some(HistoryEntry {
                     round_id: *round_id,
                     events: filtered_events,
-                    actions: Vec::new()
+                    actions: Vec::new(),
                 });
             }
         }
@@ -76,11 +76,22 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>) {
-        // self.push(HistoryEntry {
-        //     round_id: *round_id,
-        //     events: filtered_events,
-        //     actions: Vec::new()
-        // });
+        let mut new_entry: Option<HistoryEntry> = None;
+        let a = actions.iter().cloned().collect();
+        match self.get(&round_id) {
+            Some(history_entry) => history_entry.actions = a,
+            None => {
+                new_entry = Some(HistoryEntry {
+                    round_id: *round_id,
+                    events: Vec::new(),
+                    actions: a,
+                });
+            }
+        }
+        match new_entry {
+            Some(history_entry) => self.push(history_entry),
+            None => ()
+        }
     }
 
     fn get(&mut self, round_id: &i16) -> Option<&mut HistoryEntry> {

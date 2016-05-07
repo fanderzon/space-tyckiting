@@ -56,7 +56,7 @@ pub struct ActionsMessage {
     pub actions: Vec<Action>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Action  {
     #[serde(rename="botId")]
     pub bot_id: i16,
