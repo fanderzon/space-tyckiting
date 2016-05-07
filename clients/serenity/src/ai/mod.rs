@@ -2,18 +2,17 @@ extern crate serde; extern crate serde_json;
 
 mod radar;
 mod evade;
+pub mod bot;
 
-use std::str::from_utf8;
-use websocket::Message;
-use websocket::message::Type;
 use position::Pos;
 use util;
 use defs;
-use defs::{Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::{Event, Action, Config, ActionsMessage, IncomingEvents};
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
+use strings::{ ACTIONS, CANNON, RADAR, MOVE };
 use lists::*;
 use ai::radar::Radar;
+use ai::bot::Bot;
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -27,12 +26,6 @@ pub struct Ai {
     enemy_knowledge: Vec<Vec<(i16, Pos)>>,
     damaged_bots: Vec<Vec<i16>>,
     config: Config,
-}
-
-#[derive(PartialEq)]
-pub enum NoAction {
-    Ignore,
-    Exit,
 }
 
 impl Ai {
@@ -173,39 +166,12 @@ impl Ai {
         self.damaged_bots.push(damaged_bots);
     }
 
-    pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
-        match message.opcode {
-            Type::Text => {
-                println!("It's text!");
-
-                let pl = from_utf8(&message.payload).unwrap();
-                let message_json: IncomingMessage = serde_json::from_str(&pl).unwrap();
-
-                match message_json.event_type.as_ref() {
-                    EVENTS => {
-                        println!("Got som events!");
-                        let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
-                        self.round_id = events_json.round_id;
-                        let events = events_json.events.iter().map(defs::parse_event).collect();
-                        self.update_state(&events);
-                        let decisions = self.make_decisions();
-                        let actions_message = self.make_actions_message(decisions);
-                        return Ok(actions_message);
-                    }
-                    END => {
-                        println!("Got end message, we're ending!");
-                        return Err(NoAction::Exit);
-                    }
-                    ev => {
-                        println!("Got unrecognized event type {}, ignoring.", ev);
-                    }
-                }
-            }
-            _ => {
-                println!("Got a weird non-text message from server, ignoring.");
-            }
-        }
-        return Err(NoAction::Ignore);
+    pub fn handle_message(&mut self, events_json: IncomingEvents) -> ActionsMessage {
+        self.round_id = events_json.round_id;
+        let events = events_json.events.iter().map(defs::parse_event).collect();
+        self.update_state(&events);
+        let decisions = self.make_decisions();
+        return self.make_actions_message(decisions);
     }
 
     fn get_bot(&self, id: i16) -> Option<&Bot> {
@@ -214,26 +180,5 @@ impl Ai {
 
     fn get_bot_mut(&mut self, id: i16) -> Option<&mut Bot> {
         return self.bots.iter_mut().find(|bot|bot.id == id);
-    }
-}
-
-#[allow(dead_code)]
-pub struct Bot {
-    pub id: i16,
-    pub name: String,
-    pub alive: bool,
-    pub pos: Pos,
-    pub hp: i16,
-}
-
-impl Bot {
-    fn new(def: &defs::Bot) -> Bot {
-        return Bot {
-            id: def.bot_id,
-            name: def.name.to_owned(),
-            alive: def.alive,
-            pos: def.pos.unwrap(),
-            hp: def.hp.unwrap(),
-        };
     }
 }

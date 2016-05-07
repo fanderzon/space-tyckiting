@@ -1,4 +1,4 @@
-use ai::*;
+use ai::bot::Bot;
 use defs::Action;
 use position::Pos;
 use strings::{ NOACTION };
