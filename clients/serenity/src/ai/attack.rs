@@ -1,5 +1,5 @@
 use defs::{ Action, Event, DieEvent };
-use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT, NOACTION };
+use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT, NOACTION, MODE_ATTACK };
 use position::Pos;
 use ai::*;
 use lists::*;
@@ -27,41 +27,41 @@ impl Ai {
             return self.one_bot_attack_strategy(&mut actions, target);
         } else {
             if let Some(t) = target {
-                self.all_shoot_or_scan(&mut actions, t);
+                if self.in_attack_scan_loop() {
+                    println!("In scan loop");
+                    self.one_bot_attack_strategy(&mut actions, target);
+                } else {
+                    self.all_shoot_or_scan(&mut actions, t);
+                }
                 return true;
             }
         }
 
-        // Next let's see if we hit something that we didn't radar
-        // let hit_events: Vec<Event> = self.history.get_events_for_round( HIT, self.round_id )
-        //     .iter()
-        //     .cloned()
-        //     .filter(|hit| {
-        //         match hit {
-        //             &Event::Hit(ref ev) => !self.is_our_bot(ev.bot_id),
-        //             _ => false,
-        //         }
-        //     })
-        //     .collect();
-        // for hit in hit_events {
-        //     match hit {
-        //         Event::Hit(ref ev) => {
-        //             let our_bot = ev.source;
-        //             if let Some(action) = self.history.get_action_for_bot(&our_bot, &self.round_id) {
-        //                 println!("We hit something at {:?}", action.pos);
-        //                 if self.bots_available_for_attack(&actions) > 1 {
-        //                     self.all_shoot_or_scan(&mut actions, action.pos);
-        //                     return true;
-        //                 } else {
-        //                     self.all_shoot_or_scan(&mut actions, action.pos);
-        //                     return true;
-        //                 }
-        //             }
-        //         },
-        //         _ => ()
-        //     }
-        // }
         return false;
+    }
+
+    fn in_attack_scan_loop(&self) -> bool {
+        let four_rounds_ago = self.round_id - 2;
+        let history_entries: Vec<HistoryEntry> = self.history
+            .iter()
+            .cloned()
+            .filter(|he| he.round_id >= four_rounds_ago && he.round_id != self.round_id)
+            .collect();
+        for entry in history_entries {
+            if entry.mode != MODE_ATTACK {
+                return false;
+            } else {
+                let cannon_count = entry.actions
+                    .iter()
+                    .filter(|ac| ac.action_type == CANNON.to_string())
+                    .count();
+                if cannon_count > 0 {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     // Returns the number of bots that are alive and not evading
@@ -70,7 +70,7 @@ impl Ai {
             .iter()
             .filter(|bot| bot.alive && {
                 if let Some(ac) = actions.iter().find(|ac| ac.bot_id == bot.id) {
-                    ac.action_type != MOVE.to_string() && ac.action_type != NOACTION.to_string()
+                    ac.action_type != MOVE.to_string()
                 } else {
                     false
                 }
@@ -86,23 +86,39 @@ impl Ai {
         let mut mode = false;
         let free_bot = self.get_one_bot(&actions);
         println!("Live bot {:?}", free_bot);
+        if let Some(bot) = free_bot {
+            // If we have a target we should be in attack mode even if we have to evade
+            if let Some(t) = target {
+                mode = true;
+            };
+
+            // If evading we can't really attack
+            if self.bots_available_for_attack(&actions) < 1 {
+                println!("No bots available for attack");
+                return mode;
+            }
+
+            // If we have a active target this is pretty easy, shoot at it
+            if let Some(t) = target {
+                println!("Attacking with bot {:?}", &bot);
+                actions.set_action_for(bot.id, CANNON, t.random_spread());
+                return true;
+            };
+
+            // If not things get more interesting, let's see if we are in attack mode
+            let last_round_id = self.round_id - 1;
+            let last_round = &self.history.get(&last_round_id);
+            if let Some(last_round) = self.history.get(&last_round_id) {
+                println!("last_round {:?}", last_round);
+                if last_round.mode == MODE_ATTACK.to_string() {
+                    if let Some(cannon_action) = last_round.actions
+                        .iter().find(|ac| ac.action_type == CANNON.to_string()) {
+                        actions.set_action_for(bot.id, RADAR, cannon_action.pos.random_spread());
+                    };
+                }
+            }
+        };
         return mode;
-        // match self.get_live_bot() {
-        //     Some(ref bot) => {
-        //         if let Some(t) = target {
-        //             mode = true;
-        //         };
-        //
-        //         if self.bots_available_for_attack(&actions) < 1 {
-        //             return mode;
-        //         }
-        //
-        //         if let Some(t) = target {
-        //             actions.set_action_for(bot.id, CANNON, t);
-        //         };
-        //     },
-        //     None => return false,
-        // }
     }
 
     // Get the one free bot (or only alive bot)

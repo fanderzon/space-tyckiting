@@ -5,6 +5,8 @@ use util;
 use lists::ActionsList;
 
 impl Ai {
+    // Might be good to keep around as an option?
+    #[allow(dead_code)]
     pub fn random_radars_action(&self, actions: &mut Vec<Action>) {
         for bot in &self.bots {
             if bot.alive {

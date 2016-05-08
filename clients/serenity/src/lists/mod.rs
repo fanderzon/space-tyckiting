@@ -54,7 +54,8 @@ impl ActionsList for Vec<Action> {
 pub trait HistoryList {
     fn add_events(&mut self, round_id: &i16, events: &Vec<Event>);
     fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>);
-    fn get(&mut self, round_id: &i16) -> Option<&mut HistoryEntry>;
+    fn get(&self, round_id: &i16) -> Option<&HistoryEntry>;
+    fn get_mut(&mut self, round_id: &i16) -> Option<&mut HistoryEntry>;
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)>;
     fn get_events_for_round(&self, match_event: &str, round_id: i16) -> Vec<Event>;
@@ -72,7 +73,7 @@ impl HistoryList for Vec<HistoryEntry> {
     fn add_events(&mut self, round_id: &i16, events: &Vec<Event>) {
         let filtered_events = self.filter_relevant(events);
         let mut new_entry: Option<HistoryEntry> = None;
-        match self.get(&round_id) {
+        match self.get_mut(&round_id) {
             Some(history_entry) => history_entry.events = filtered_events,
             None => {
                 new_entry = Some(HistoryEntry {
@@ -93,7 +94,7 @@ impl HistoryList for Vec<HistoryEntry> {
     fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>) {
         let mut new_entry: Option<HistoryEntry> = None;
         let a = actions.iter().cloned().collect();
-        match self.get(&round_id) {
+        match self.get_mut(&round_id) {
             Some(history_entry) => history_entry.actions = a,
             None => {
                 new_entry = Some(HistoryEntry {
@@ -111,7 +112,14 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     #[allow(dead_code)]
-    fn get(&mut self, round_id: &i16) -> Option<&mut HistoryEntry> {
+    fn get(&self, round_id: &i16) -> Option<&HistoryEntry> {
+        self
+            .iter()
+            .find(|he|he.round_id == *round_id)
+    }
+
+    #[allow(dead_code)]
+    fn get_mut(&mut self, round_id: &i16) -> Option<&mut HistoryEntry> {
         self
             .iter_mut()
             .find(|he|he.round_id == *round_id)
@@ -245,7 +253,7 @@ impl HistoryList for Vec<HistoryEntry> {
     #[allow(dead_code)]
     fn set_mode(&mut self, mode: &str) {
         let last = self.len() as i16 - 1;
-        match self.get(&last) {
+        match self.get_mut(&last) {
             Some(h) => h.mode = mode.to_string(),
             None => (),
         }
@@ -257,7 +265,7 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HistoryEntry {
     pub round_id: i16,
     pub events: Vec<Event>,
