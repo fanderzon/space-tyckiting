@@ -135,14 +135,11 @@ impl Ai {
     pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
         match message.opcode {
             Type::Text => {
-                println!("It's text!");
-
                 let pl = from_utf8(&message.payload).unwrap();
                 let message_json: IncomingMessage = serde_json::from_str(&pl).unwrap();
 
                 match message_json.event_type.as_ref() {
                     EVENTS => {
-                        println!("Got som events!");
                         let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
                         self.round_id = events_json.round_id;
                         let events = events_json.events.iter().map(defs::parse_event).collect();
@@ -151,11 +148,10 @@ impl Ai {
                         let (mode,actions) = self.make_decisions();
                         self.history.set_mode(&mode);
                         self.history.add_actions(&self.round_id, &actions);
-                        println!("Logged history {:?}", self.history);
                         return Ok(self.make_actions_message(actions));
                     }
                     END => {
-                        println!("Got end message, we're ending!");
+                        println!("Got end message, we're ending! {:?}", pl);
                         return Err(NoAction::Exit);
                     }
                     ev => {

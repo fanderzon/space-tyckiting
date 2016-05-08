@@ -26,7 +26,6 @@ impl Ai {
             if *radar_index > positions.len() as i16 - 1 {
                 *radar_index = 0;
             }
-            println!("Scanning with radar index {:?} {}", radar_index, positions.len());
             actions.set_action_for(*bot_id, RADAR, self.radar_positions.1[*radar_index as usize]);
             *radar_index += 1;
         }

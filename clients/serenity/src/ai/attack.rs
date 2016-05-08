@@ -12,7 +12,9 @@ impl Ai {
         }
 
         let mut target: Option<Pos> = None;
-        println!("Bots available for attack {:?}", self.bots_available_for_attack(&actions));
+        // println!("Bots available for attack {:?}", self.bots_available_for_attack(&actions));
+        // Let's see when the last time was we knew about an enemy position
+        // println!("Last enemy position {:?}", self.history.get_last_enemy_position());
 
         // Let's look for the easiest case first, if we saw an enemy last turn
         let mut attack_events = self.history.get_events_for_round( SEE, self.round_id );
@@ -29,8 +31,7 @@ impl Ai {
             return true;
         }
 
-        // Let's see when the last time was we knew about an enemy position
-        println!("Last enemy position {:?}", self.history.get_last_enemy_position());
+
 
         // Next let's see if we hit something that we didn't radar
         let hit_events: Vec<Event> = self.history.get_events_for_round( HIT, self.round_id )
@@ -43,8 +44,6 @@ impl Ai {
                 }
             })
             .collect();
-        println!("Hit events {:?}", self.history.get_events(HIT, 1));
-        println!("Filtered hit events {:?}", hit_events);
         for hit in hit_events {
             match hit {
                 Event::Hit(ref ev) => {
@@ -63,23 +62,6 @@ impl Ai {
                 _ => ()
             }
         }
-
-        // Next, let's see if we were attacking last round
-
-
-        // were we attacking previously?
-        // let mut killed_target = false;
-        // if let Some(pos) = self.last_attack_pos() {
-        //     println!("Last attack Pos: {:?}", pos);
-        //     if !self.target_still_there(pos) {
-        //         println!("Killed target {:?}", pos);
-        //         killed_target = true;
-        //     }
-        // }
-
-        if let Some(t) = target {
-            self.all_shoot_or_scan(&mut actions, t);
-        }
         return false;
     }
 
@@ -89,10 +71,8 @@ impl Ai {
             .iter()
             .filter(|bot| bot.alive && {
                 if let Some(ac) = actions.iter().find(|ac| ac.bot_id == bot.id) {
-                    println!("Action for bot {:?}", ac);
                     ac.action_type != MOVE.to_string()
                 } else {
-                    println!("No action for bot {:?}", bot);
                     false
                 }
             })
@@ -118,7 +98,7 @@ impl Ai {
                     // Already on the move, let's keep it that way
                     println!("Already on the move, not changing bot {:?}", bot.id);
                 } else if radared == false && self.bots_alive() > 1 {
-                    println!("Setting attack radar for bot {:?} {}", bot.id, radared);
+                    println!("Setting attack radar for bot {:?}", bot.id);
                     actions.set_action_for(bot.id, RADAR, target);
                     radared = true;
                 } else {
