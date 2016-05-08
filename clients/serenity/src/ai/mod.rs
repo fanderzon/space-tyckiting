@@ -14,6 +14,8 @@ use lists::*;
 use ai::radar::Radar;
 use ai::bot::Bot;
 
+type Snapshots<T> = Vec<Vec<T>>;
+
 pub struct Ai {
     bots: Vec<Bot>,
     round_id: i16,
@@ -21,10 +23,10 @@ pub struct Ai {
     #[allow(dead_code)]
     game_map: Vec<Pos>,
     // Snapshots of known enemy positions for every round, last being this one
-    enemy_poss: Vec<Vec<(Option<i16>, Pos)>>,
+    enemy_poss: Snapshots<(Option<i16>, Pos)>,
     // Same as above, but opposite: What the enemy knows for sure about our positions
-    enemy_knowledge: Vec<Vec<(i16, Pos)>>,
-    damaged_bots: Vec<Vec<i16>>,
+    enemy_knowledge: Snapshots<(i16, Pos)>,
+    damaged_bots: Snapshots<i16>,
     config: Config,
 }
 
