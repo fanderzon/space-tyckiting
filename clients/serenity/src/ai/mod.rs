@@ -7,7 +7,7 @@ use position::Pos;
 use defs;
 use defs::{Config, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, IncomingEnd };
 use defs::Event::*;
-use strings::{ ACTIONS, END, EVENTS, MODE_SCAN, MODE_ATTACK };
+use strings::{ ACTIONS, END, EVENTS, MODE_SCAN, MODE_ATTACK, NOACTION };
 use lists::*;
 
 mod radar;
@@ -34,18 +34,17 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&mut self) -> (String, Vec<Action>) {
-        // Populate an actions vector with a default action for each bot
-        let mut actions: Vec<Action> = Vec::populate(&self.bots, &self.radar_positions.1);
+        // Populate an actions vector with NOACTION for each bot
+        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+        // Set default mode, mode's are MODE_ATTACK or MODE_SCAN
+        // evading is considered something that is up to each bot regardless of mode
         let mut mode = MODE_SCAN.to_string();
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
-        // Add random radar actions as default
-        self.random_radars_action(&mut actions);
-
-        // Evade if needed
+        // Let each bot evade as needed
         self.evade_if_needed(&mut actions);
 
-        // Attack if we have a target
+        // Attack if we have a target, evading bots will continue evading
         let attacking: bool = self.attack_and_scan_if_target(&mut actions);
 
         // If not attacking, use non evading bots to scan in a sequence
@@ -56,7 +55,8 @@ impl Ai {
         }
 
         println!("Action are {:?}", actions);
-        return (mode,actions);
+        // Filter out NOACTIONs before sending to server
+        return (mode,actions.iter().cloned().filter(|ac| ac.action_type != NOACTION.to_string()).collect());
     }
 
     pub fn new(start: &defs::Start) -> Ai {

@@ -8,7 +8,7 @@ use strings::{ RADAR, NOACTION, ALL, RADARECHO, SEE, CANNON };
 
 pub trait ActionsList {
     // Naming?
-    fn populate(bots: &Vec<Bot>, radar_positions: &Vec<Pos>) -> Vec<Action>;
+    fn populate(bots: &Vec<Bot>) -> Vec<Action>;
     fn get_action(&self, id: i16) -> Option<&Action>;
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action>;
     fn set_action_for(&mut self, id: i16, action: &str, pos: Pos);
@@ -17,13 +17,13 @@ pub trait ActionsList {
 impl ActionsList for Vec<Action> {
     // Populate a default (radar) action for each bot with random radar
     #[allow(dead_code)]
-    fn populate(bots: &Vec<Bot>, radar_positions: &Vec<Pos>) -> Vec<Action> {
+    fn populate(bots: &Vec<Bot>) -> Vec<Action> {
         bots
             .iter()
             .map(|b| Action {
                 bot_id: b.id,
-                action_type: RADAR.to_string(),
-                pos: util::get_random_pos(radar_positions)
+                action_type: NOACTION.to_string(),
+                pos: Pos {x: 0, y: 0},
             })
             .collect::<Vec<Action>>()
     }

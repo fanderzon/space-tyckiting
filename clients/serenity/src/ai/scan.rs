@@ -1,5 +1,5 @@
 use defs::Action;
-use strings::{RADAR};
+use strings::{RADAR, NOACTION};
 use ai::*;
 use util;
 use lists::ActionsList;
@@ -15,18 +15,26 @@ impl Ai {
 
     pub fn scan_with_idle_bots(&mut self, actions: &mut Vec<Action>) {
         let (ref mut radar_index, ref positions) = self.radar_positions;
-        let idle_bots: &Vec<i16> = &actions.iter()
+        let idle_bots: Vec<i16> = self.bots
+            .iter()
             .cloned()
-            .filter(|ac| ac.action_type == RADAR.to_string())
-            .map(|ref ac| ac.bot_id)
-            .collect::<Vec<i16>>();
+            .filter(|bot| bot.alive && {
+                if let Some(ac) = actions.iter().find(|ac| ac.bot_id == bot.id) {
+                    ac.action_type == NOACTION.to_string()
+                } else {
+                    false
+                }
+            })
+            .map(|ref bot| bot.id)
+            .collect();
+
 
         for bot_id in idle_bots {
             // replace with better radar logic
             if *radar_index > positions.len() as i16 - 1 {
                 *radar_index = 0;
             }
-            actions.set_action_for(*bot_id, RADAR, self.radar_positions.1[*radar_index as usize]);
+            actions.set_action_for(bot_id, RADAR, self.radar_positions.1[*radar_index as usize]);
             *radar_index += 1;
         }
     }

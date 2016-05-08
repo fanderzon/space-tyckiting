@@ -1,16 +1,11 @@
 use defs::{ Action, Event, DieEvent };
-use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT };
+use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT, NOACTION };
 use position::Pos;
 use ai::*;
 use lists::*;
 
 impl Ai {
     pub fn attack_and_scan_if_target(&self, mut actions: &mut Vec<Action>) -> bool {
-        // Separate the logic needed if we only have one bot left
-        if self.bots_alive() == 1 {
-            return self.one_bot_attack_strategy(&mut actions);
-        }
-
         let mut target: Option<Pos> = None;
         // println!("Bots available for attack {:?}", self.bots_available_for_attack(&actions));
         // Let's see when the last time was we knew about an enemy position
@@ -26,42 +21,46 @@ impl Ai {
                 _ => ()
             }
         }
-        if let Some(t) = target {
-            self.all_shoot_or_scan(&mut actions, t);
-            return true;
-        }
 
-
-
-        // Next let's see if we hit something that we didn't radar
-        let hit_events: Vec<Event> = self.history.get_events_for_round( HIT, self.round_id )
-            .iter()
-            .cloned()
-            .filter(|hit| {
-                match hit {
-                    &Event::Hit(ref ev) => !self.is_our_bot(ev.bot_id),
-                    _ => false,
-                }
-            })
-            .collect();
-        for hit in hit_events {
-            match hit {
-                Event::Hit(ref ev) => {
-                    let our_bot = ev.source;
-                    if let Some(action) = self.history.get_action_for_bot(&our_bot, &self.round_id) {
-                        println!("We hit something at {:?}", action.pos);
-                        if self.bots_available_for_attack(&actions) > 1 {
-                            self.all_shoot_or_scan(&mut actions, action.pos);
-                            return true;
-                        } else {
-                            self.all_shoot_or_scan(&mut actions, action.pos);
-                            return true;
-                        }
-                    }
-                },
-                _ => ()
+        // Separate the logic needed if we only have one bot left
+        if self.bots_alive() == 1 {
+            return self.one_bot_attack_strategy(&mut actions, target);
+        } else {
+            if let Some(t) = target {
+                self.all_shoot_or_scan(&mut actions, t);
+                return true;
             }
         }
+
+        // Next let's see if we hit something that we didn't radar
+        // let hit_events: Vec<Event> = self.history.get_events_for_round( HIT, self.round_id )
+        //     .iter()
+        //     .cloned()
+        //     .filter(|hit| {
+        //         match hit {
+        //             &Event::Hit(ref ev) => !self.is_our_bot(ev.bot_id),
+        //             _ => false,
+        //         }
+        //     })
+        //     .collect();
+        // for hit in hit_events {
+        //     match hit {
+        //         Event::Hit(ref ev) => {
+        //             let our_bot = ev.source;
+        //             if let Some(action) = self.history.get_action_for_bot(&our_bot, &self.round_id) {
+        //                 println!("We hit something at {:?}", action.pos);
+        //                 if self.bots_available_for_attack(&actions) > 1 {
+        //                     self.all_shoot_or_scan(&mut actions, action.pos);
+        //                     return true;
+        //                 } else {
+        //                     self.all_shoot_or_scan(&mut actions, action.pos);
+        //                     return true;
+        //                 }
+        //             }
+        //         },
+        //         _ => ()
+        //     }
+        // }
         return false;
     }
 
@@ -71,7 +70,7 @@ impl Ai {
             .iter()
             .filter(|bot| bot.alive && {
                 if let Some(ac) = actions.iter().find(|ac| ac.bot_id == bot.id) {
-                    ac.action_type != MOVE.to_string()
+                    ac.action_type != MOVE.to_string() && ac.action_type != NOACTION.to_string()
                 } else {
                     false
                 }
@@ -79,13 +78,57 @@ impl Ai {
             .count()
     }
 
-    fn one_bot_attack_strategy(&self, actions: &mut Vec<Action>) -> bool  {
-        // Exit early if we don't have any bots available for attack
-        if self.bots_available_for_attack(&actions) < 1 {
-            return false;
-        }
+    fn one_bot_attack_strategy(&self, actions: &mut Vec<Action>, target: Option<Pos>) -> bool  {
+        println!("one_bot_attack_strategy");
+        // If we are evading already let's continue doing that until we're safe
+        // Might need to revise this strategy to take risks and be aggressive if all other teams
+        // track targets as well as we do
+        let mut mode = false;
+        let free_bot = self.get_one_bot(&actions);
+        println!("Live bot {:?}", free_bot);
+        return mode;
+        // match self.get_live_bot() {
+        //     Some(ref bot) => {
+        //         if let Some(t) = target {
+        //             mode = true;
+        //         };
+        //
+        //         if self.bots_available_for_attack(&actions) < 1 {
+        //             return mode;
+        //         }
+        //
+        //         if let Some(t) = target {
+        //             actions.set_action_for(bot.id, CANNON, t);
+        //         };
+        //     },
+        //     None => return false,
+        // }
+    }
 
-        return false;
+    // Get the one free bot (or only alive bot)
+    // We should only call this if `bots_available_for_attack` returns 1
+    fn get_one_bot(&self, actions: &Vec<Action>) -> Option<Bot> {
+        let alive_bots: Vec<Bot> = self.bots
+            .iter()
+            .cloned()
+            .filter(|bot| bot.alive)
+            .collect();
+        // If only one alive bot return it
+        if alive_bots.len() == 1 {
+            return Some(alive_bots[0].clone());
+        }
+        // Otherwise return the first bot not evading
+        alive_bots
+            .iter()
+            .cloned()
+            .filter(|bot| {
+                if let Some(ac) = actions.iter().find(|ac| ac.bot_id == bot.id) {
+                    ac.action_type != MOVE.to_string()
+                } else {
+                    false
+                }
+            })
+            .find(|bot| bot.alive)
     }
 
     // Takes the action array and a position to attack and modifies it
