@@ -70,6 +70,10 @@ impl Ai {
     }
 
     fn evade_spread_pos(&self, bot: &Bot) -> Pos {
+        // When too close to the edge of the board the spread logic doesn't move enough
+        if bot.pos.distance(Pos{x: 0, y: 0}) > &self.config.field_radius - 2 {
+            return self.evade_random_pos(&bot);
+        }
         let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
         let otherbots: Vec<&Bot> = self.bots.iter()
             .by_ref()

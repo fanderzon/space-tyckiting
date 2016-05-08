@@ -8,7 +8,7 @@ use util;
 use defs;
 use defs::{Config, Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE, RADARECHO, DETECTED, DAMAGED, SEE, HIT };
+use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE, RADARECHO, DETECTED, DAMAGED, SEE, HIT, UNDETERMINED };
 use lists::*;
 
 mod radar;
@@ -35,8 +35,10 @@ pub enum NoAction {
 
 impl Ai {
     fn make_decisions(&self, events: Vec<Event>) -> Vec<Action> {
+        println!("events {:?}", events);
         // Populate an actions vector with a default action for each bot
         let mut actions: Vec<Action> = Vec::populate(&self.bots, &self.radar_positions.1);
+        let mut mode: String = UNDETERMINED.to_string();
         let mut alive_bots = self.bots.iter().filter(|b| b.alive).map(|b| b.clone()).collect::<Vec<Bot>>();
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
@@ -123,6 +125,13 @@ impl Ai {
 
     fn bots_alive(&self) -> usize {
         self.bots.iter().filter(|bot| bot.alive ).count()
+    }
+
+    fn is_our_bot(&self, bot_id: i16) -> bool {
+        match self.get_bot(bot_id) {
+            Some(_) => return true,
+            _ => return false
+        }
     }
 
     // TODO: This does not actually need to be mutable
@@ -216,6 +225,7 @@ impl Ai {
 }
 
 #[allow(dead_code)]
+#[derive(Debug,Clone)]
 pub struct Bot {
     pub id: i16,
     pub name: String,
@@ -233,15 +243,5 @@ impl Bot {
             pos: def.pos.unwrap(),
             hp: def.hp.unwrap(),
         };
-    }
-
-    fn clone(&self) -> Bot {
-        Bot {
-            id: self.id,
-            name: self.name.to_string(),
-            alive: self.alive,
-            pos: self.pos,
-            hp: self.hp
-        }
     }
 }
