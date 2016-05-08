@@ -34,7 +34,7 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&self, events: Vec<Event>) -> Vec<Action> {
+    fn make_decisions(&mut self, events: Vec<Event>) -> Vec<Action> {
         println!("events {:?}", events);
         // Populate an actions vector with a default action for each bot
         let mut actions: Vec<Action> = Vec::populate(&self.bots, &self.radar_positions.1);
@@ -48,7 +48,10 @@ impl Ai {
         // Evade if needed
         self.evade_if_needed(&mut actions);
 
-        self.attack_and_scan_if_target(&mut actions);
+        let attacking: bool = self.attack_and_scan_if_target(&mut actions);
+        if !attacking {
+            self.scan_with_idle_bots(&mut actions);
+        }        
 
         // // Try getting history events
         // let mut evade_events = self.history.get_events( DETECTED, 2 );
