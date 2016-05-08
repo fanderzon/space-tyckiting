@@ -11,8 +11,8 @@ include!(concat!(env!("OUT_DIR"), "/position.rs"));
 impl Pos {
     pub fn triangle_smart(&self) -> Vec<Pos> {
         let mut triangle = match rand::thread_rng().gen_range(0, 2) {
-            0 => { self.triangle_down() }
-            _ => { self.triangle_up() }
+            0 => { self.triangle_left() }
+            _ => { self.triangle_right() }
         };
         // Shuffle so that the same will not be middled every time
         let mut rng = rand::thread_rng();
@@ -28,20 +28,20 @@ impl Pos {
     }
 
     // TODO: Generalize for shot radius
-    pub fn triangle_down(&self) -> Vec<Pos> {
+    fn triangle_left(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;
-        return vec![ Pos::new(x-1, y+2),
-                     Pos::new(x+2, y-1),
-                     Pos::new(x-1, y-1) ];
+        return vec![ Pos::new(x-1, y  ),
+                     Pos::new(x+1, y-1),
+                     Pos::new(x,   y+1) ];
     }
 
     // TODO: Generalize for shot radius
-    pub fn triangle_up(&self) -> Vec<Pos> {
+    pub fn triangle_right(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;
-        return vec![ Pos::new(x+1, y-2),
-                     Pos::new(x-2, y+1),
-                     Pos::new(x+1, y+1) ];
+        return vec![ Pos::new(x+1, y  ),
+                     Pos::new(x-1, y+1),
+                     Pos::new(x,   y-1) ];
     }
 }
