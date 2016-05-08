@@ -1,5 +1,5 @@
 use defs::{ Action, Event, HitEvent, DieEvent };
-use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT, ATTACK };
+use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT };
 use position::Pos;
 use rand;
 use rand::Rng;

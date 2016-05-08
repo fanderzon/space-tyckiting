@@ -20,8 +20,4 @@ pub const MOVE: &'static str = "move";
 pub const NOACTION: &'static str = "noaction";
 pub const INVALID: &'static str = "invalid";
 
-pub const UNDETERMINED: &'static str = "undetermined";
-pub const ATTACK: &'static str = "attack";
-pub const SCAN: &'static str = "scan";
-
 pub const ALL: &'static str = "all";
