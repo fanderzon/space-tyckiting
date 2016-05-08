@@ -7,7 +7,7 @@ use position::Pos;
 use defs;
 use defs::{Config, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, END, EVENTS };
+use strings::{ ACTIONS, END, EVENTS, MODE_SCAN, MODE_ATTACK };
 use lists::*;
 
 mod radar;
@@ -33,9 +33,10 @@ pub enum NoAction {
 }
 
 impl Ai {
-    fn make_decisions(&mut self) -> Vec<Action> {
+    fn make_decisions(&mut self) -> (String, Vec<Action>) {
         // Populate an actions vector with a default action for each bot
         let mut actions: Vec<Action> = Vec::populate(&self.bots, &self.radar_positions.1);
+        let mut mode = MODE_SCAN.to_string();
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
         // Add random radar actions as default
@@ -48,12 +49,14 @@ impl Ai {
         let attacking: bool = self.attack_and_scan_if_target(&mut actions);
 
         // If not attacking, use non evading bots to scan in a sequence
-        if !attacking {
+        if attacking {
+            mode = MODE_ATTACK.to_string()
+        } else {
             self.scan_with_idle_bots(&mut actions);
         }
 
         println!("Action are {:?}", actions);
-        return actions;
+        return (mode,actions);
     }
 
     pub fn new(start: &defs::Start) -> Ai {
@@ -145,8 +148,10 @@ impl Ai {
                         let events = events_json.events.iter().map(defs::parse_event).collect();
                         self.update_state(&events);
                         self.history.add_events(&self.round_id, &events);
-                        let actions: Vec<Action> = self.make_decisions();
+                        let (mode,actions) = self.make_decisions();
+                        self.history.set_mode(&mode);
                         self.history.add_actions(&self.round_id, &actions);
+                        println!("Logged history {:?}", self.history);
                         return Ok(self.make_actions_message(actions));
                     }
                     END => {
