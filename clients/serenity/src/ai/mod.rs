@@ -30,31 +30,11 @@ pub struct Ai {
 
 impl Ai {
     fn make_decisions(&self) -> Vec<Action> {
-        // Populate an actions vector with a no action for each bot
-        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+        let mut actions = self.default_actions();
 
-        // Add random radar actions as default
-        self.random_radars_action(&mut actions);
-
-        // let mut actions = self.random_radars_action();
-        let curr_enemy_pos: &Vec<(Option<i16>, Pos)> = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
-        let curr_enemy_know   = self.enemy_knowledge.last().expect("There should be a snapshot for enemy knowledge");
-        let curr_damaged_bots = self.damaged_bots.last().expect("There should be an damaged bots snapshot for this round!");
-
-        // TODO: Handle multiple known positions better
-        if let Some(tup) = curr_enemy_pos.first() {
-            let (_, ref pos) = *tup;
-            self.all_shoot_at_action(&mut actions, pos);
-        }
-
-        for tup in curr_enemy_know {
-            let (ref id, _) = *tup;
-            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
-        }
-
-        for id in curr_damaged_bots {
-            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
-        }
+        self.all_shoot_one_enemy_if_seen(&mut actions);
+        self.evade_if_detected(&mut actions);
+        self.evade_if_damaged(&mut actions);
 
         return actions;
     }
@@ -70,6 +50,39 @@ impl Ai {
             damaged_bots: Vec::new(),
             config: start.config.clone(),
         };
+    }
+
+    fn all_shoot_one_enemy_if_seen(&self, actions: &mut Vec<Action>) {
+        let curr_enemy_pos: &Vec<(Option<i16>, Pos)> = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
+        // TODO: Handle multiple known positions better
+        if let Some(tup) = curr_enemy_pos.first() {
+            let (_, ref pos) = *tup;
+            self.all_shoot_at_action(actions, pos);
+        }
+    }
+
+    fn evade_if_detected(&self, actions: &mut Vec<Action>) {
+        let curr_enemy_know   = self.enemy_knowledge.last().expect("There should be a snapshot for enemy knowledge");
+        for tup in curr_enemy_know {
+            let (ref id, _) = *tup;
+            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
+        }
+    }
+
+    fn evade_if_damaged(&self, actions: &mut Vec<Action>) {
+        let curr_damaged_bots = self.damaged_bots.last().expect("There should be an damaged bots snapshot for this round!");
+        for id in curr_damaged_bots {
+            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
+        }
+    }
+
+    fn default_actions(&self) -> Vec<Action> {
+        // Populate an actions vector with a no action for each bot
+        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+
+        // Add random radar actions as default
+        self.random_radars_action(&mut actions);
+        return actions;
     }
 
     fn create_bots(j_bots: &Vec<defs::Bot>) -> Vec<Bot> {
