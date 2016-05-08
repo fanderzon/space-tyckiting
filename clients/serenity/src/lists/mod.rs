@@ -12,10 +12,10 @@ pub trait ActionsList {
 }
 
 impl ActionsList for Vec<Action> {
-    // Populate a default action for each bot with random radar
+    // Populate a default action for each alive bot with random radar
     fn populate(bots: &Vec<Bot>) -> Vec<Action> {
-        bots
-            .iter()
+        bots.iter()
+            .filter(|b| b.alive)
             .map(|b| Action {
                 bot_id: b.id,
                 action_type: NOACTION.to_string(),
