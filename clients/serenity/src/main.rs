@@ -15,9 +15,9 @@ use websocket::{Message, Sender, Receiver};
 use websocket::message::Type;
 use websocket::ws::dataframe::DataFrame;
 use rand::Rng;
-use strings::{CONNECTED, JOIN};
+use strings::{CONNECTED, JOIN, EVENTS, END};
 use ai::Ai;
-use ai::NoAction::{Exit, Ignore};
+use defs::{IncomingMessage, IncomingEvents};
 
 fn main() {
     let (mut sender, mut receiver) = util::connect();
@@ -38,15 +38,31 @@ fn main() {
             }
         };
 
-        match ai.handle_message(message) {
-            Ok(actions) => {
-                let actions_string = serde_json::to_string(&actions).unwrap();
-                let actions_message = Message::text( actions_string.to_string() );
-                sender.send_message(&actions_message).expect("Sending actions message failed.");
+        match message.opcode {
+            Type::Text => {
+                let pl = from_utf8(&message.payload).unwrap();
+                let message_json: IncomingMessage = serde_json::from_str(&pl).unwrap();
+
+                match message_json.event_type.as_ref() {
+                    EVENTS => {
+                        println!("Got som events!");
+                        let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
+                        let actions = ai.handle_message(events_json);
+                        let actions_string = serde_json::to_string(&actions).unwrap();
+                        let actions_message = Message::text( actions_string.to_string() );
+                        sender.send_message(&actions_message).expect("Sending actions message failed.");
+                    }
+                    END => {
+                        println!("Got end message, we're ending!");
+                        break;
+                    }
+                    ev => {
+                        println!("Got unrecognized event type {}, ignoring.", ev);
+                    }
+                }
             }
-            Err(do_what) => match do_what {
-                Exit => { break; },
-                Ignore => { continue; },
+            _ => {
+                println!("Got a weird non-text message from server, ignoring.");
             }
         }
     }

@@ -35,3 +35,6 @@ node_modules
 
 # istanbul
 coverage/
+
+# Misc (added later)
+testrun_server_log.txt

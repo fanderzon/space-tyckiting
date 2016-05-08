@@ -1,15 +1,7 @@
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Debug, Copy, Clone)]
 pub struct Pos {
     pub x: i16,
     pub y: i16,
-}
-
-//TODO: Use #derive?
-impl Eq for Pos {}
-impl PartialEq for Pos {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y
-    }
 }
 
 impl Pos {

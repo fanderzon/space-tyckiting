@@ -4,6 +4,7 @@ use position::Pos;
 use rand;
 use rand::Rng;
 use ai::*;
+use ai::bot::Bot;
 
 impl Ai {
     #[allow(dead_code)]

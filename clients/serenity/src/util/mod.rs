@@ -3,6 +3,8 @@ extern crate websocket;
 
 use websocket::client::request::Url;
 use websocket::Client;
+use std::collections::HashSet;
+use std::hash::Hash;
 
 use rand::Rng;
 use position::{Pos};
@@ -39,4 +41,9 @@ pub fn get_random_pos(positions: &Vec<Pos>) -> Pos {
 #[allow(dead_code)]
 pub fn get_rand_range(min: i16, max: i16) -> i16 {
     rand::thread_rng().gen_range(min, max)
+}
+
+pub fn dedup_nosort<T: Eq + Hash>(vec: &mut Vec<T>) {
+    let set: HashSet<T> = vec.drain(..).collect();
+    vec.extend(set.into_iter());
 }

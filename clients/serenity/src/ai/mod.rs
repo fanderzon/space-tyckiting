@@ -1,18 +1,20 @@
 extern crate serde; extern crate serde_json;
 
-use std::str::from_utf8;
-use websocket::Message;
-use websocket::message::Type;
+mod radar;
+mod evade;
+pub mod bot;
+
 use position::Pos;
 use util;
 use defs;
-use defs::{Event, Action, Config, ActionsMessage, IncomingMessage, IncomingEvents};
+use defs::{Event, Action, Config, ActionsMessage, IncomingEvents};
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE };
+use strings::{ ACTIONS, CANNON, RADAR, MOVE };
 use lists::*;
+use ai::radar::Radar;
+use ai::bot::Bot;
 
-mod radar;
-mod evade;
+type Snapshots<T> = Vec<Vec<T>>;
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -21,68 +23,78 @@ pub struct Ai {
     #[allow(dead_code)]
     game_map: Vec<Pos>,
     // Snapshots of known enemy positions for every round, last being this one
-    enemy_poss: Vec<Vec<(Option<i16>, Pos)>>,
+    enemy_poss: Snapshots<(Option<i16>, Pos)>,
     // Same as above, but opposite: What the enemy knows for sure about our positions
-    enemy_knowledge: Vec<Vec<(i16, Pos)>>,
-    damaged_bots: Vec<Vec<i16>>,
+    enemy_knowledge: Snapshots<(i16, Pos)>,
+    damaged_bots: Snapshots<i16>,
     config: Config,
-}
-
-#[derive(PartialEq)]
-pub enum NoAction {
-    Ignore,
-    Exit,
 }
 
 impl Ai {
     fn make_decisions(&self) -> Vec<Action> {
-        // Populate an actions vector with a no action for each bot
-        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+        let mut actions = self.default_actions();
 
-        // Add random radar actions as default
-        self.random_radars_action(&mut actions);
-
-        // let mut actions = self.random_radars_action();
-        let curr_enemy_pos: &Vec<(Option<i16>, Pos)> = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
-        let curr_enemy_know   = self.enemy_knowledge.last().expect("There should be a snapshot for enemy knowledge");
-        let curr_damaged_bots = self.damaged_bots.last().expect("There should be an damaged bots snapshot for this round!");
-
-        // TODO: Handle multiple known positions better
-        if let Some(tup) = curr_enemy_pos.first() {
-            let (_, ref pos) = *tup;
-            self.all_shoot_at_action(&mut actions, pos);
-        }
-
-        for tup in curr_enemy_know {
-            let (ref id, _) = *tup;
-            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
-        }
-
-        for id in curr_damaged_bots {
-            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
-        }
+        self.all_shoot_one_enemy_if_seen(&mut actions);
+        self.evade_if_detected(&mut actions);
+        self.evade_if_damaged(&mut actions);
 
         return actions;
     }
 
     pub fn new(start: &defs::Start) -> Ai {
-        // TODO: separate into smaller functions to do set up
-        let mut radar: radar::Radar = radar::Radar::new();
-        let radar_positions = &radar.get_radar_positions(&start.config);
-        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbors(&start.config.field_radius);
-        game_map.push(Pos { x: 0, y: 0 });
-
         return Ai {
-            bots: start.you.bots.iter().map(Bot::new).collect(),
+            bots: Ai::create_bots(&start.you.bots),
             round_id: -1,
-            radar_positions: radar_positions.clone(),
-            game_map: game_map.clone(),
+            radar_positions: Radar::new().get_radar_positions(&start.config),
+            game_map: Ai::create_game_map(start.config.field_radius),
             enemy_poss: Vec::new(),
-            // Same as above, but opposite: What the enemy knows for sure about our positions
             enemy_knowledge: Vec::new(),
             damaged_bots: Vec::new(),
             config: start.config.clone(),
         };
+    }
+
+    fn all_shoot_one_enemy_if_seen(&self, actions: &mut Vec<Action>) {
+        let curr_enemy_pos: &Vec<(Option<i16>, Pos)> = self.enemy_poss.last().expect("There should be an enemy pos snapshot for this round!");
+        // TODO: Handle multiple known positions better
+        if let Some(tup) = curr_enemy_pos.first() {
+            let (_, ref pos) = *tup;
+            self.all_shoot_at_action(actions, pos);
+        }
+    }
+
+    fn evade_if_detected(&self, actions: &mut Vec<Action>) {
+        let curr_enemy_know   = self.enemy_knowledge.last().expect("There should be a snapshot for enemy knowledge");
+        for tup in curr_enemy_know {
+            let (ref id, _) = *tup;
+            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
+        }
+    }
+
+    fn evade_if_damaged(&self, actions: &mut Vec<Action>) {
+        let curr_damaged_bots = self.damaged_bots.last().expect("There should be an damaged bots snapshot for this round!");
+        for id in curr_damaged_bots {
+            actions.set_action_for(*id, MOVE, self.evade_pos(self.get_bot(*id).unwrap()));
+        }
+    }
+
+    fn default_actions(&self) -> Vec<Action> {
+        // Populate an actions vector with a no action for each bot
+        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+
+        // Add random radar actions as default
+        self.random_radars_action(&mut actions);
+        return actions;
+    }
+
+    fn create_bots(j_bots: &Vec<defs::Bot>) -> Vec<Bot> {
+        j_bots.iter().map(Bot::new).collect()
+    }
+
+    fn create_game_map(field_radius: i16) -> Vec<Pos> {
+        let mut game_map = Pos { x: 0, y: 0 }.neighbors(&field_radius);
+        game_map.push(Pos { x: 0, y: 0 });
+        return game_map;
     }
 
     fn bots_alive(&self) -> usize {
@@ -112,10 +124,7 @@ impl Ai {
         }
     }
 
-    // TODO: This does not actually need to be mutable
-    fn make_actions_message(&self, mut actions: Vec<Action>) -> ActionsMessage {
-        actions.reverse();  // Apparently by "latest", futurice means "first in array". So we need
-                            // to put our "latest" actions "first".
+    fn make_actions_message(&self, actions: Vec<Action>) -> ActionsMessage {
         return ActionsMessage {
             event_type: ACTIONS.to_string(),
             round_id: self.round_id,
@@ -164,45 +173,20 @@ impl Ai {
             }
         }
 
-        // TODO: Maybe remove dupes? There are edge cases...
+        util::dedup_nosort(&mut enemy_positions);
+        util::dedup_nosort(&mut enemy_knowledge);
+        util::dedup_nosort(&mut damaged_bots);
         self.enemy_poss.push(enemy_positions);
         self.enemy_knowledge.push(enemy_knowledge);
         self.damaged_bots.push(damaged_bots);
     }
 
-    pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
-        match message.opcode {
-            Type::Text => {
-                println!("It's text!");
-
-                let pl = from_utf8(&message.payload).unwrap();
-                let message_json: IncomingMessage = serde_json::from_str(&pl).unwrap();
-
-                match message_json.event_type.as_ref() {
-                    EVENTS => {
-                        println!("Got som events!");
-                        let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
-                        self.round_id = events_json.round_id;
-                        let events = events_json.events.iter().map(defs::parse_event).collect();
-                        self.update_state(&events);
-                        let decisions = self.make_decisions();
-                        let actions_message = self.make_actions_message(decisions);
-                        return Ok(actions_message);
-                    }
-                    END => {
-                        println!("Got end message, we're ending!");
-                        return Err(NoAction::Exit);
-                    }
-                    ev => {
-                        println!("Got unrecognized event type {}, ignoring.", ev);
-                    }
-                }
-            }
-            _ => {
-                println!("Got a weird non-text message from server, ignoring.");
-            }
-        }
-        return Err(NoAction::Ignore);
+    pub fn handle_message(&mut self, events_json: IncomingEvents) -> ActionsMessage {
+        self.round_id = events_json.round_id;
+        let events = events_json.events.iter().map(defs::parse_event).collect();
+        self.update_state(&events);
+        let decisions = self.make_decisions();
+        return self.make_actions_message(decisions);
     }
 
     fn get_bot(&self, id: i16) -> Option<&Bot> {
@@ -211,26 +195,5 @@ impl Ai {
 
     fn get_bot_mut(&mut self, id: i16) -> Option<&mut Bot> {
         return self.bots.iter_mut().find(|bot|bot.id == id);
-    }
-}
-
-#[allow(dead_code)]
-pub struct Bot {
-    pub id: i16,
-    pub name: String,
-    pub alive: bool,
-    pub pos: Pos,
-    pub hp: i16,
-}
-
-impl Bot {
-    fn new(def: &defs::Bot) -> Bot {
-        return Bot {
-            id: def.bot_id,
-            name: def.name.to_owned(),
-            alive: def.alive,
-            pos: def.pos.unwrap(),
-            hp: def.hp.unwrap(),
-        };
     }
 }
