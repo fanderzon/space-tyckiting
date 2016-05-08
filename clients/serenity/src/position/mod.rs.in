@@ -13,6 +13,7 @@ impl PartialEq for Pos {
 }
 
 impl Pos {
+    #[allow(dead_code)]
     pub fn new(x: i16, y: i16) -> Pos {
         return Pos {x: x, y: y};
     }
@@ -101,6 +102,7 @@ impl Pos {
         return self.clone();
     }
 
+    #[allow(dead_code)]
     fn round_cube_to_nearest_hex( &self, x: f32, y: f32, z: f32 ) -> Pos {
         // Simply rounding would work in most of the cases.
         // The extra logic is there to handle few special cases,
@@ -109,17 +111,17 @@ impl Pos {
         // http://www.redblobgames.com/grids/hexagons/#rounding
 
         let mut rx = x.round() as i16;
-        let mut ry = y.round() as i16;
+        let ry = y.round() as i16;
         let mut rz = z.round() as i16;
 
-        let xDiff: f32 = {rx as f32 - x}.abs();
-        let yDiff: f32 = {ry as f32 - y}.abs();
-        let zDiff: f32 = {rz as f32 - z}.abs();
+        let x_diff: f32 = {rx as f32 - x}.abs();
+        let y_diff: f32 = {ry as f32 - y}.abs();
+        let z_diff: f32 = {rz as f32 - z}.abs();
 
-        if xDiff > yDiff && xDiff > zDiff {
+        if x_diff > y_diff && x_diff > z_diff {
             rx = -ry - rz;
-        } else if yDiff > zDiff {
-            ry = -rx - rz;
+        } else if y_diff > z_diff {
+            // Do nothing apparently? ry = -rx - rz;
         } else {
             rz = -rx - ry;
         }
@@ -129,6 +131,7 @@ impl Pos {
         }
     }
 
+    #[allow(dead_code)]
     pub fn triangle_smart(&self) -> Vec<Pos> {
         return match rand::thread_rng().gen_range(0, 2) {
             0 => { self.triangle_down() }
@@ -137,6 +140,7 @@ impl Pos {
     }
 
     // TODO: Generalize for shot radius
+    #[allow(dead_code)]
     pub fn triangle_down(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;
@@ -146,6 +150,7 @@ impl Pos {
     }
 
     // TODO: Generalize for shot radius
+    #[allow(dead_code)]
     pub fn triangle_up(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;

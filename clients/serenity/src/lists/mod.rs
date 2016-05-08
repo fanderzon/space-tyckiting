@@ -3,7 +3,7 @@ use util;
 use defs:: { Action, Event, get_event_name };
 use defs::Event::*;
 use position::Pos;
-use strings::{ RADAR, NOACTION, ALL, RADARECHO, SEE };
+use strings::{ RADAR, NOACTION, ALL, RADARECHO, SEE, CANNON };
 
 
 pub trait ActionsList {
@@ -16,6 +16,7 @@ pub trait ActionsList {
 
 impl ActionsList for Vec<Action> {
     // Populate a default (radar) action for each bot with random radar
+    #[allow(dead_code)]
     fn populate(bots: &Vec<Bot>, radar_positions: &Vec<Pos>) -> Vec<Action> {
         bots
             .iter()
@@ -27,18 +28,21 @@ impl ActionsList for Vec<Action> {
             .collect::<Vec<Action>>()
     }
 
+    #[allow(dead_code)]
     fn get_action(&self, id: i16) -> Option<&Action> {
         self
             .iter()
             .find(|ac|ac.bot_id == id)
     }
 
+    #[allow(dead_code)]
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action> {
         self
             .iter_mut()
             .find(|ac|ac.bot_id == id)
     }
 
+    #[allow(dead_code)]
     fn set_action_for(&mut self, id: i16, action_type: &str, pos: Pos) {
         if let Some(action) = self.get_action_mut(id) {
             action.action_type = action_type.to_string();
@@ -55,6 +59,7 @@ pub trait HistoryList {
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)>;
     fn get_events_for_round(&self, match_event: &str, round_id: i16) -> Vec<Event>;
     fn get_last_enemy_position(&self) -> Option<(Event, i16)>;
+    fn get_last_attack_action(&self) -> Option<(Action, i16)>;
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)>;
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action>;
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action>;
@@ -63,6 +68,7 @@ pub trait HistoryList {
 }
 
 impl HistoryList for Vec<HistoryEntry> {
+    #[allow(dead_code)]
     fn add_events(&mut self, round_id: &i16, events: &Vec<Event>) {
         let filtered_events = self.filter_relevant(events);
         let mut new_entry: Option<HistoryEntry> = None;
@@ -83,6 +89,7 @@ impl HistoryList for Vec<HistoryEntry> {
         }
     }
 
+    #[allow(dead_code)]
     fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>) {
         let mut new_entry: Option<HistoryEntry> = None;
         let a = actions.iter().cloned().collect();
@@ -103,18 +110,20 @@ impl HistoryList for Vec<HistoryEntry> {
         }
     }
 
+    #[allow(dead_code)]
     fn get(&mut self, round_id: &i16) -> Option<&mut HistoryEntry> {
         self
             .iter_mut()
             .find(|he|he.round_id == *round_id)
     }
 
+    #[allow(dead_code)]
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event> {
         events
             .iter()
             .cloned()
             .filter(|e| {match *e {
-                    Noaction(ref ev) => false,
+                    Noaction(_) => false,
                     Invalid => false,
                     _ => true,
                 }})
@@ -122,6 +131,7 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     // Returns each matching event as a tuple with round_id as second value
+    #[allow(dead_code,unused_variables)]
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)> {
         let last_round = self.len() as i16 - 1;
         self
@@ -130,6 +140,7 @@ impl HistoryList for Vec<HistoryEntry> {
             .flat_map(|he| {
                 // Slightly ugly work around for returning a tuple with the round_id
                 let mut round_ids: Vec<i16> = Vec::new();
+
                 for i in 0..he.events.len() {
                     round_ids.push(he.round_id);
                 }
@@ -142,6 +153,7 @@ impl HistoryList for Vec<HistoryEntry> {
             .collect()
     }
 
+    #[allow(dead_code)]
     fn get_events_for_round(&self, match_event: &str, round_id: i16) -> Vec<Event> {
         self
             .iter()
@@ -153,6 +165,7 @@ impl HistoryList for Vec<HistoryEntry> {
             .collect()
     }
 
+    #[allow(dead_code)]
     fn get_last_enemy_position(&self) -> Option<(Event, i16)> {
         let last_entry = &self[self.len()-1];
         let mut round = last_entry.round_id + 0;
@@ -167,7 +180,22 @@ impl HistoryList for Vec<HistoryEntry> {
         return None;
     }
 
+    #[allow(dead_code)]
+    fn get_last_attack_action(&self) -> Option<(Action, i16)> {
+        let last_entry = &self[self.len()-1];
+        let mut round = last_entry.round_id + 0;
+        while round > -1 {
+            let cannon_actions = self.get_actions_for_round( CANNON, round );
+            for action in cannon_actions {
+                return Some( (action, round) );
+            }
+            round -= 1;
+        }
+        return None;
+    }
+
     // Returns each matching action as a tuple with round_id as second value
+    #[allow(dead_code,unused_variables)]
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)> {
         let last_round = self.len() as i16 - 1;
         self
@@ -188,6 +216,7 @@ impl HistoryList for Vec<HistoryEntry> {
             .collect()
     }
 
+    #[allow(dead_code)]
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action> {
         self
             .iter()
@@ -205,8 +234,7 @@ impl HistoryList for Vec<HistoryEntry> {
             .collect()
     }
 
-
-
+    #[allow(dead_code)]
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action> {
         self.get_actions_for_round( ALL, *round_id )
             .iter()
@@ -214,6 +242,7 @@ impl HistoryList for Vec<HistoryEntry> {
             .find(|ac| ac.bot_id == *bot_id)
     }
 
+    #[allow(dead_code)]
     fn set_mode(&mut self, mode: &str) {
         let last = self.len() as i16 - 1;
         match self.get(&last) {
@@ -222,9 +251,9 @@ impl HistoryList for Vec<HistoryEntry> {
         }
     }
 
+    #[allow(dead_code)]
     fn get_mode(&self, round_id: &i16) -> String {
-        let last = self.len() - 1;
-        self[last].mode.to_string()
+        self[*round_id as usize].mode.to_string()
     }
 }
 

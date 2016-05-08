@@ -1,8 +1,6 @@
-use defs::{ Action, Event, HitEvent, DieEvent };
+use defs::{ Action, Event, DieEvent };
 use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT };
 use position::Pos;
-use rand;
-use rand::Rng;
 use ai::*;
 use lists::*;
 
@@ -131,21 +129,9 @@ impl Ai {
         }
     }
 
-    pub fn all_shoot_at_action(&self, actions: &mut Vec<Action>, target: &Pos) {
-        self.bots
-            .iter()
-            // TODO: Maybe add shuffle triangle here?
-            // TODO: Random shooting at middle
-            .zip(Pos::triangle_smart(target).iter())
-            .map(|(bot, pos)| {
-                actions.set_action_for(bot.id, CANNON, *pos);
-                Action {
-                    bot_id: bot.id,
-                    action_type: CANNON.to_string(),
-                    pos: *pos,
-            }}).count();
-    }
-
+    // See if we need this for anything, with the current logic probably not
+    // Maybe some edge cases with the one bot strategy?
+    #[allow(dead_code)]
     fn get_pos_from_hit_entry(&self, event_entry: &(Event,i16)) -> Option<Pos> {
         let previous_round: i16 = event_entry.1 - 1;
         let mut source: i16 = -1;
@@ -167,84 +153,8 @@ impl Ai {
         }
     }
 
-    fn target_still_there(&self, last_pos: Pos) -> bool {
-        let echoes = self.history.get_events( RADARECHO, 1 );
-        println!("target_still_there echoes {:?}", echoes);
-        if echoes.len() > 0 {
-            match echoes[0].0 {
-                Event::Echo(ref ev) => {
-                    if ev.pos.distance(last_pos) <= 3 {
-                        return true;
-                    }
-                },
-                _ => ()
-            }
-        }
-        return false;
-    }
-
-    fn last_attack_pos(&self) -> Option<Pos> {
-        if self.history.get_actions( CANNON, 3).len() > 0 {
-            let radar = self.history.get_actions( RADAR, 2);
-            if radar.len() == 1 {
-                return Some(radar[0].0.pos.clone());
-
-            }
-        }
-        return None;
-    }
-
-    fn get_possible_kill_shot(&self) -> Option<Action> {
-        let last_round: i16 = self.round_id as i16 - 1;
-        let possible_die_event = self.get_possible_die_event();
-        let die_event = match possible_die_event {
-            Some(ev) => Some(ev),
-            None => return None,
-        };
-
-        println!("Die event {:?}", die_event);
-
-        let hit_events: Vec<Option<HitEvent>> = self.history
-            .get_events( HIT, 3 )
-            .iter()
-            .cloned()
-            // .filter(|&(ref ev, ref round_id)| *round_id == last_round)
-            .map(|(ref ev, ref round_id)| match ev {
-                &Event::Hit(ref e) => Some(e.clone()),
-                _ => None,
-            })
-            .collect();
-        println!("Hit events {:?}", hit_events);
-
-        let mut hit: Option<HitEvent> = None;
-        // Find at least one hit matching the dead bot
-        for hits in hit_events {
-            match hits {
-                Some(ev) => if ev.bot_id == die_event.unwrap().bot_id {
-                    hit = Some(ev);
-                },
-                None => ()
-            }
-        }
-
-        println!("Kill shot hit {:?}", hit);
-        match hit {
-            Some(hit_ev) => {
-                let actions = self.history
-                    .get_actions( CANNON, 1 );
-                for ac in actions {
-                    if ac.0.bot_id == hit_ev.bot_id {
-                        return Some(ac.0.clone());
-                    }
-                }
-                return None;
-            },
-            None => return None,
-        }
-
-        return None;
-    }
-
+    // Convenience for acting on an enemy die event, needed?
+    #[allow(dead_code)]
     fn get_possible_die_event(&self) -> Option<DieEvent> {
         let die_events = self.history.get_events( DIE, 1 );
         if die_events.len() > 0 {

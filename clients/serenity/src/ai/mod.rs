@@ -4,11 +4,10 @@ use std::str::from_utf8;
 use websocket::Message;
 use websocket::message::Type;
 use position::Pos;
-use util;
 use defs;
-use defs::{Config, Start, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, SomeEvent};
+use defs::{Config, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, CANNON, END, EVENTS, RADAR, MOVE, RADARECHO, DETECTED, DAMAGED, SEE, HIT };
+use strings::{ ACTIONS, END, EVENTS };
 use lists::*;
 
 mod radar;
@@ -107,10 +106,10 @@ impl Ai {
                         // TODO: Enemy bot died, this should be recorded somehow.
                     }
                 }
-                See(ref ev) => {
+                See(_) => {
 
                 }
-                Echo(ref ev) => {
+                Echo(_) => {
 
                 }
                 Damaged(ref ev) => {
