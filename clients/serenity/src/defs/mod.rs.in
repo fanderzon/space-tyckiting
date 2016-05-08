@@ -102,6 +102,13 @@ pub struct IncomingEvents {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct IncomingEnd {    
+    pub you: Team,
+    #[serde(rename="winnerTeamId")]
+    pub winner_team_id: i16,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SomeEvent {
     pub event: String,
     #[serde(rename="botId")]

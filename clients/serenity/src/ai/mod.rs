@@ -5,7 +5,7 @@ use websocket::Message;
 use websocket::message::Type;
 use position::Pos;
 use defs;
-use defs::{Config, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents };
+use defs::{Config, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, IncomingEnd };
 use defs::Event::*;
 use strings::{ ACTIONS, END, EVENTS, MODE_SCAN, MODE_ATTACK };
 use lists::*;
@@ -151,7 +151,13 @@ impl Ai {
                         return Ok(self.make_actions_message(actions));
                     }
                     END => {
-                        println!("Got end message, we're ending! {:?}", pl);
+                        let end: IncomingEnd = serde_json::from_str(&pl).unwrap();
+                        println!("Game ended!");
+                        if end.you.team_id == end.winner_team_id {
+                            println!("WE WON!!!");
+                        } else {
+                            println!("WE DIDN'T WIN!!!");
+                        }
                         return Err(NoAction::Exit);
                     }
                     ev => {
