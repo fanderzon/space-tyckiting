@@ -13,6 +13,7 @@ use strings::{ ACTIONS, CANNON, RADAR, MOVE };
 use lists::*;
 use ai::radar::Radar;
 use ai::bot::Bot;
+use log::Logger;
 
 type Snapshots<T> = Vec<Vec<T>>;
 
@@ -28,6 +29,7 @@ pub struct Ai {
     enemy_knowledge: Snapshots<(i16, Pos)>,
     damaged_bots: Snapshots<i16>,
     config: Config,
+    logger: Logger,
 }
 
 impl Ai {
@@ -51,6 +53,7 @@ impl Ai {
             enemy_knowledge: Vec::new(),
             damaged_bots: Vec::new(),
             config: start.config.clone(),
+            logger: Logger::new(),
         };
     }
 
@@ -183,6 +186,8 @@ impl Ai {
 
     pub fn handle_message(&mut self, events_json: IncomingEvents) -> ActionsMessage {
         self.round_id = events_json.round_id;
+        let log_msg = format!("round {}", self.round_id);
+        self.logger.log(&log_msg, 0);
         let events = events_json.events.iter().map(defs::parse_event).collect();
         self.update_state(&events);
         let decisions = self.make_decisions();

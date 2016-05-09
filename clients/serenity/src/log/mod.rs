@@ -1,3 +1,5 @@
+extern crate time;
+
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -10,8 +12,14 @@ static TAB: &'static str = "    ";
 impl Logger {
     pub fn new() -> Logger {
         return Logger {
-            file: File::create("log.txt").ok(),
+            file: File::create(Logger::make_filename()).ok(),
         }
+    }
+
+    fn make_filename() -> String {
+        let tm = time::now().to_timespec();
+        let msg = format!("logger_{}:{}.log", tm.sec, tm.nsec);
+        return msg;
     }
 
     pub fn log(&mut self, msg: &str, indent: usize) {

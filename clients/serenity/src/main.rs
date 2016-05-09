@@ -21,9 +21,6 @@ use ai::Ai;
 use defs::{IncomingMessage, IncomingEvents};
 
 fn main() {
-    let mut l = log::Logger::new();
-    l.log("en galen salamander", 2);
-
     let (mut sender, mut receiver) = util::connect();
     let mut msg_iter = receiver.incoming_messages();
 
