@@ -89,7 +89,7 @@ impl Ai {
         println!("Live bot {:?}", free_bot);
         if let Some(bot) = free_bot {
             // If we have a target we should be in attack mode even if we have to evade
-            if let Some(t) = target {
+            if let Some(_) = target {
                 mode = true;
             };
 
@@ -108,7 +108,6 @@ impl Ai {
 
             // If not things get more interesting, let's see if we are in attack mode
             let last_round_id = self.round_id - 1;
-            let last_round = &self.history.get(&last_round_id);
             if let Some(last_round) = self.history.get(&last_round_id) {
                 println!("last_round {:?}", last_round);
                 if last_round.mode == MODE_ATTACK.to_string() {

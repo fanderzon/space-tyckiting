@@ -43,6 +43,7 @@ pub fn get_rand_range(min: i16, max: i16) -> i16 {
     rand::thread_rng().gen_range(min, max + 1)
 }
 
+#[allow(dead_code)]
 pub fn dedup_nosort<T: Eq + Hash>(vec: &mut Vec<T>) {
     let set: HashSet<T> = vec.drain(..).collect();
     vec.extend(set.into_iter());

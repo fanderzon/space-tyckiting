@@ -1,13 +1,10 @@
 extern crate serde; extern crate serde_json;
 
-use std::str::from_utf8;
-use websocket::Message;
-use websocket::message::Type;
 use position::Pos;
 use defs;
-use defs::{Config, Event, Action, ActionsMessage, IncomingMessage, IncomingEvents, IncomingEnd };
+use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, END, EVENTS, MODE_SCAN, MODE_ATTACK, NOACTION };
+use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION };
 use lists::*;
 use ai::bot::Bot;
 
@@ -26,12 +23,6 @@ pub struct Ai {
     // One entry per game round, could be a bit risky if rounds don't come in order
     history: Vec<HistoryEntry>,
     config: Config,
-}
-
-#[derive(PartialEq)]
-pub enum NoAction {
-    Ignore,
-    Exit,
 }
 
 impl Ai {
