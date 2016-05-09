@@ -5,6 +5,7 @@ use rand;
 use rand::Rng;
 use ai::*;
 use lists::*;
+use ai::bot::Bot;
 
 impl Ai {
     #[allow(dead_code)]
