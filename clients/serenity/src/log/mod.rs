@@ -31,4 +31,10 @@ impl Logger {
             let _ = f.write_all(b"\n");
         }
     }
+
+    pub fn write_q(&mut self, q: &Vec<(String, usize)>) {
+        for &(ref msg, indent) in q {
+            self.log(&msg, indent);
+        }
+    }
 }
