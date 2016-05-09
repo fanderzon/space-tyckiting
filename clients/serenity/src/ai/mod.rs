@@ -60,7 +60,7 @@ impl Ai {
         game_map.push(Pos { x: 0, y: 0 });
 
         return Ai {
-            bots: start.you.bots.iter().map(Bot::new).collect(),
+            bots: gen_bots(start),
             round_id: -1,
             radar_positions: (0, radar_positions.clone()),
             game_map: game_map.clone(),
@@ -149,3 +149,9 @@ impl Ai {
         return self.bots.iter_mut().find(|bot|bot.id == id);
     }
 }
+
+fn gen_bots(start: &defs::Start) -> Vec<Bot> {
+    return start.you.bots.iter().map(Bot::new).collect();
+}
+
+
