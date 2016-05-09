@@ -9,11 +9,13 @@ use defs::{Config, Event, Action, ActionsMessage, IncomingMessage, IncomingEvent
 use defs::Event::*;
 use strings::{ ACTIONS, END, EVENTS, MODE_SCAN, MODE_ATTACK, NOACTION };
 use lists::*;
+use ai::bot::Bot;
 
 mod radar;
 mod evade;
 mod scan;
 mod attack;
+pub mod bot;
 
 pub struct Ai {
     bots: Vec<Bot>,
@@ -132,44 +134,20 @@ impl Ai {
         }
     }
 
-    pub fn handle_message(&mut self, message: Message) -> Result<ActionsMessage, NoAction> {
-        match message.opcode {
-            Type::Text => {
-                let pl = from_utf8(&message.payload).unwrap();
-                let message_json: IncomingMessage = serde_json::from_str(&pl).unwrap();
+    pub fn handle_message(&mut self, events_json: IncomingEvents) -> ActionsMessage {
+        self.round_id = events_json.round_id;
+        let events = events_json.events.iter().map(defs::parse_event).collect();
+        self.update_state(&events);
 
-                match message_json.event_type.as_ref() {
-                    EVENTS => {
-                        let events_json: IncomingEvents = serde_json::from_str(&pl).unwrap();
-                        self.round_id = events_json.round_id;
-                        let events = events_json.events.iter().map(defs::parse_event).collect();
-                        self.update_state(&events);
-                        self.history.add_events(&self.round_id, &events);
-                        let (mode,actions) = self.make_decisions();
-                        self.history.set_mode(&mode);
-                        self.history.add_actions(&self.round_id, &actions);
-                        return Ok(self.make_actions_message(actions));
-                    }
-                    END => {
-                        let end: IncomingEnd = serde_json::from_str(&pl).unwrap();
-                        println!("Game ended!");
-                        if end.you.team_id == end.winner_team_id {
-                            println!("WE WON!!!");
-                        } else {
-                            println!("WE DIDN'T WIN!!!");
-                        }
-                        return Err(NoAction::Exit);
-                    }
-                    ev => {
-                        println!("Got unrecognized event type {}, ignoring.", ev);
-                    }
-                }
-            }
-            _ => {
-                println!("Got a weird non-text message from server, ignoring.");
-            }
-        }
-        return Err(NoAction::Ignore);
+        // Add events to history
+        self.history.add_events(&self.round_id, &events);
+
+        // Get mode and actions for the round and add those to history too
+        let (mode,actions) = self.make_decisions();
+        self.history.set_mode(&mode);
+        self.history.add_actions(&self.round_id, &actions);
+
+        return self.make_actions_message(actions);
     }
 
     fn get_bot(&self, id: i16) -> Option<&Bot> {
@@ -178,27 +156,5 @@ impl Ai {
 
     fn get_bot_mut(&mut self, id: i16) -> Option<&mut Bot> {
         return self.bots.iter_mut().find(|bot|bot.id == id);
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Debug,Clone)]
-pub struct Bot {
-    pub id: i16,
-    pub name: String,
-    pub alive: bool,
-    pub pos: Pos,
-    pub hp: i16,
-}
-
-impl Bot {
-    fn new(def: &defs::Bot) -> Bot {
-        return Bot {
-            id: def.bot_id,
-            name: def.name.to_owned(),
-            alive: def.alive,
-            pos: def.pos.unwrap(),
-            hp: def.hp.unwrap(),
-        };
     }
 }

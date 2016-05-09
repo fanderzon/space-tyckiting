@@ -4,6 +4,7 @@ use defs:: { Action, Event, get_event_name };
 use defs::Event::*;
 use position::Pos;
 use strings::{ RADAR, NOACTION, ALL, RADARECHO, SEE, CANNON };
+use ai::bot::Bot;
 
 
 pub trait ActionsList {

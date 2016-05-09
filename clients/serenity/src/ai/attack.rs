@@ -3,6 +3,7 @@ use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, MODE_ATTACK };
 use position::Pos;
 use ai::*;
 use lists::*;
+use ai::bot::Bot;
 
 impl Ai {
     pub fn attack_and_scan_if_target(&self, mut actions: &mut Vec<Action>) -> bool {
