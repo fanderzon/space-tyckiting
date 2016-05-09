@@ -1,9 +1,10 @@
-use defs::Action;
-use strings::{MOVE};
+use defs::{ Action, Event };
+use strings::{DETECTED, DAMAGED, MOVE};
 use position::Pos;
 use rand;
 use rand::Rng;
 use ai::*;
+use lists::*;
 use ai::bot::Bot;
 
 impl Ai {
@@ -24,6 +25,20 @@ impl Ai {
         }
     }
 
+    pub fn evade_if_needed(&self, actions: &mut Vec<Action>) {
+        // Let's evade if we were seen in the last two turns
+        let mut evade_events = self.history.get_events( DETECTED, 2 );
+        evade_events.append(&mut self.history.get_events( DAMAGED, 2 ));
+
+        for ev in evade_events {
+            match ev.0 {
+                Event::Detected(ref ev) => actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap())),
+                Event::Damaged(ref ev) => actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap())),
+                _ => ()
+            }
+        }
+    }
+
     #[allow(dead_code)]
     fn evade_random(&self, bot: &Bot) -> Action {
         let move_to = self.evade_random_pos(&bot);
@@ -36,7 +51,7 @@ impl Ai {
     }
 
     fn evade_random_pos(&self, bot: &Bot) -> Pos {
-        let neighbors = bot.pos.neighbors(&self.config.moves_allowed);
+        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
         *rand::thread_rng()
             .choose(&neighbors)
             .expect("Oh there were no neighbors? That's impossible.")
@@ -54,7 +69,11 @@ impl Ai {
     }
 
     fn evade_spread_pos(&self, bot: &Bot) -> Pos {
-        let neighbors = bot.pos.neighbors(&self.config.moves_allowed);
+        // When too close to the edge of the board the spread logic doesn't move enough
+        if bot.pos.distance(Pos{x: 0, y: 0}) > &self.config.field_radius - 2 {
+            return self.evade_random_pos(&bot);
+        }
+        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
         let otherbots: Vec<&Bot> = self.bots.iter()
             .by_ref()
             .filter(|otherbot| otherbot.id != bot.id)
