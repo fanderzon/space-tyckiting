@@ -141,32 +141,42 @@ impl Ai {
         let mut enemy_knowledge = Vec::new();
         let mut damaged_bots = Vec::new();
 
+        self.logger.log("Update_state", 1);
+
         for event in events {
             match *event {
                 Die(ref ev) => {
                     if let Some(bot) = self.get_bot_mut(ev.bot_id) {
                         bot.alive = false;
+                        self.logger.log(format!("Die own bot {}", bot.id);
                     } else {
                         // TODO: Enemy bot died, this should be recorded somehow.
                     }
                 }
                 See(ref ev) => {
                     enemy_positions.push(( None, ev.pos.clone() ));
+                    self.logger.log(format!("See enemy on {}", ev.pos);
                 }
                 Echo(ref ev) => {
                     enemy_positions.push(( None, ev.pos.clone() ));
+                    self.logger.log(format!("RadarEcho enemy on {}", ev.pos);
                 }
                 Damaged(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
                     bot.hp -= ev.damage;
                     damaged_bots.push(ev.bot_id);
+                    self.logger.log(format!("Bot {} damaged {} hp, {} hp left.", ev.bot_id, ev.damage, bot.hp);
                 }
                 Move(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
+                    let oldpos = bot.pos.clone();
                     bot.pos = ev.pos;
+                    self.logger.log(format!("Move own bot {} from {} to {}", bot.id, oldpos, bot.pos);
                 }
                 Detected(ref ev) => {
-                    enemy_knowledge.push( (ev.bot_id, self.get_bot(ev.bot_id).expect("Not bot on our team with this id").pos.clone()) );
+                    let bot = self.get_bot(ev.bot_id).expect("No bot on our team with this id wtf?");
+                    enemy_knowledge.push((ev.bot_id, bot.pos.clone()));
+                    self.logger.log(format!("Was Detected own bot {} on pos {}", bot.id, bot.pos);
                 }
                 Noaction(_) => {
                     //TODO: Maybe we can use the knowledge that a bot is sleeping? To exploit bugs
