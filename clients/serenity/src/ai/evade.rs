@@ -25,15 +25,23 @@ impl Ai {
         }
     }
 
-    pub fn evade_if_needed(&self, actions: &mut Vec<Action>) {
+    pub fn evade_if_needed(&mut self, actions: &mut Vec<Action>) {
         // Let's evade if we were seen in the last two turns
         let mut evade_events = self.history.get_events( DETECTED, 2 );
         evade_events.append(&mut self.history.get_events( DAMAGED, 2 ));
 
         for ev in evade_events {
             match ev.0 {
-                Event::Detected(ref ev) => actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap())),
-                Event::Damaged(ref ev) => actions.set_action_for(ev.bot_id, MOVE, self.evade_pos(self.get_bot(ev.bot_id).unwrap())),
+                Event::Detected(ref ev) => {
+                    let destination = self.evade_pos(self.get_bot(ev.bot_id).unwrap());
+                    actions.set_action_for(ev.bot_id, MOVE, destination);
+                    self.logger.log(&format!("Evading Bot {} to {}", ev.bot_id, destination), 2);
+                }
+                Event::Damaged(ref ev) => {
+                    let destination = self.evade_pos(self.get_bot(ev.bot_id).unwrap());
+                    actions.set_action_for(ev.bot_id, MOVE, destination);
+                    self.logger.log(&format!("Evading Bot {} to {}", ev.bot_id, destination), 2);
+                }
                 _ => ()
             }
         }

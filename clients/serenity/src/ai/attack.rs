@@ -6,7 +6,7 @@ use lists::*;
 use ai::bot::Bot;
 
 impl Ai {
-    pub fn attack_and_scan_if_target(&self, mut actions: &mut Vec<Action>) -> bool {
+    pub fn attack_and_scan_if_target(&mut self, mut actions: &mut Vec<Action>) -> bool {
         let mut target: Option<Pos> = None;
         // println!("Bots available for attack {:?}", self.bots_available_for_attack(&actions));
         // Let's see when the last time was we knew about an enemy position
@@ -17,31 +17,42 @@ impl Ai {
         attack_events.append(&mut self.history.get_events_for_round( RADARECHO, self.round_id ));
         for t in attack_events {
             match t {
-                Event::See(ref ev) => target = Some(ev.pos),
+                Event::See(ref ev)  => target = Some(ev.pos),
                 Event::Echo(ref ev) => target = Some(ev.pos),
                 _ => ()
             }
         }
+        
+        if let Some(t) = target {
+            self.logger.log(&format!("Targetting {} for attack.", t), 2);
+        }
 
+        let mode;
         // Separate the logic needed if we only have one bot left
         if self.bots_alive() == 1 {
-            return self.one_bot_attack_strategy(&mut actions, target);
+            mode = self.one_bot_attack_strategy(&mut actions, target);
         } else {
+            // TODO: So if we do have target, why give subfunctions the Option?
             if let Some(t) = target {
                 if self.in_attack_scan_loop() {
                     println!("In scan loop");
+                    self.logger.log("We are in scan loop", 2);
                     self.one_bot_attack_strategy(&mut actions, target);
                 } else {
                     self.all_shoot_or_scan(&mut actions, t);
                 }
-                return true;
+                mode = true;
+            } else {
+                mode = false;
             }
         }
 
-        return false;
+        self.logger.log(&format!("Attackmode: {}", mode), 2);
+        return mode;
     }
 
     fn in_attack_scan_loop(&self) -> bool {
+        // TODO wat
         let four_rounds_ago = self.round_id - 2;
         let history_entries: Vec<HistoryEntry> = self.history
             .iter()
@@ -79,8 +90,9 @@ impl Ai {
             .count()
     }
 
-    fn one_bot_attack_strategy(&self, actions: &mut Vec<Action>, target: Option<Pos>) -> bool  {
+    fn one_bot_attack_strategy(&mut self, actions: &mut Vec<Action>, target: Option<Pos>) -> bool  {
         println!("one_bot_attack_strategy");
+        self.logger.log("Using one bot attack strategy.", 2);
         // If we are evading already let's continue doing that until we're safe
         // Might need to revise this strategy to take risks and be aggressive if all other teams
         // track targets as well as we do
@@ -96,6 +108,7 @@ impl Ai {
             // If evading we can't really attack
             if self.bots_available_for_attack(&actions) < 1 {
                 println!("No bots available for attack");
+                self.logger.log("Bot not available for attack. Not attacking.", 2);
                 return mode;
             }
 
@@ -103,17 +116,30 @@ impl Ai {
             if let Some(t) = target {
                 println!("Attacking with bot {:?}", &bot);
                 actions.set_action_for(bot.id, CANNON, t.random_spread());
+                self.logger.log(&format!("Shooting at {} with bot {}", t, bot.id), 2);
                 return true;
             };
 
-            // If not things get more interesting, let's see if we are in attack mode
+            // If no active target, things get more interesting, let's see if we are in attack mode
             let last_round_id = self.round_id - 1;
             if let Some(last_round) = self.history.get(&last_round_id) {
                 println!("last_round {:?}", last_round);
+                //TODO: This is wrong. part of the reason we have modes is to be able to keep
+                //attacking even if we didn't actually shoot. So we should be using our seen data
+                //from the previos round, and not a potential cannon action.
+
                 if last_round.mode == MODE_ATTACK.to_string() {
-                    if let Some(cannon_action) = last_round.actions
-                        .iter().find(|ac| ac.action_type == CANNON.to_string()) {
-                        actions.set_action_for(bot.id, RADAR, cannon_action.pos.random_spread());
+                    let some_cannon_action = last_round.actions
+                        .iter() 
+                        .find(|ac| ac.action_type == CANNON.to_string());
+                    if let Some(cannon_action) = some_cannon_action {
+                        let radar_target = cannon_action.pos.random_spread();
+                        // TODO: Should radar with spread from the previous round's target, not
+                        // actual position shot (because then we get two spreads).
+                        actions.set_action_for(bot.id, RADAR, radar_target);
+                        self.logger.log(&format!(
+                            "Radaring at {} with bot {} because we shot there last round.", 
+                            radar_target, bot.id), 2);
                     };
                 }
             }

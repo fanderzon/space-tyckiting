@@ -29,11 +29,13 @@ pub struct Ai {
 
 impl Ai {
     fn make_decisions(&mut self) -> (String, Vec<Action>) {
-        // Populate an actions vector with NOACTION for each bot
-        let mut actions: Vec<Action> = Vec::populate(&self.bots);
+        let mut actions: Vec<Action> = Vec::populate(&self.bots); // NOACTIONS for every live bot
+
         // Set default mode, mode's are MODE_ATTACK or MODE_SCAN
         // evading is considered something that is up to each bot regardless of mode
         let mut mode = MODE_SCAN.to_string();
+
+        self.logger.log("Making decisions", 1);
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
         // Let each bot evade as needed
