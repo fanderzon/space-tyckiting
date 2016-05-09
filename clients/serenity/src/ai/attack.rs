@@ -1,5 +1,5 @@
 use defs::{ Action, Event, DieEvent };
-use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, HIT, NOACTION, MODE_ATTACK };
+use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, MODE_ATTACK };
 use position::Pos;
 use ai::*;
 use lists::*;
