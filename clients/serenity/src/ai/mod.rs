@@ -35,7 +35,7 @@ impl Ai {
         // evading is considered something that is up to each bot regardless of mode
         let mut mode = MODE_SCAN.to_string();
 
-        self.logger.log("Making decisions", 1);
+        self.logger.log("Decisions", 1);
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
 
         // Let each bot evade as needed
@@ -98,6 +98,7 @@ impl Ai {
 
     // Purpose: go through events and update our state so it's up to date for decisionmaking later
     fn update_state(&mut self, events: &Vec<Event>) {
+        self.logger.log("Events:", 1);
         let mut log: Vec<(String, usize)> = Vec::new();
         for event in events {
             match *event {
@@ -157,6 +158,7 @@ impl Ai {
         self.history.set_mode(&mode);
         self.history.add_actions(&self.round_id, &actions);
 
+        self.logger.log(&actions.render(), 2);
         return self.make_actions_message(actions);
     }
 

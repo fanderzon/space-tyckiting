@@ -4,13 +4,13 @@ use position::Pos;
 use strings::{ NOACTION, ALL, RADARECHO, SEE, CANNON };
 use ai::bot::Bot;
 
-
 pub trait ActionsList {
     // Naming?
     fn populate(bots: &Vec<Bot>) -> Vec<Action>;
     fn get_action(&self, id: i16) -> Option<&Action>;
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action>;
     fn set_action_for(&mut self, id: i16, action: &str, pos: Pos);
+    fn render(&self) -> String;
 }
 
 impl ActionsList for Vec<Action> {
@@ -46,6 +46,19 @@ impl ActionsList for Vec<Action> {
         if let Some(action) = self.get_action_mut(id) {
             action.action_type = action_type.to_string();
             action.pos = pos;
+        }
+    }
+
+    // Rust y u no let me make this as a trait???
+    fn render(&self) -> String {
+        if self.is_empty() {
+            return String::from("| <no actions> |");
+        } else {
+            let mut result = String::from("|");
+            for ac in self {
+                result.push_str(&format!(" {} |", ac));
+            }
+            return result;
         }
     }
 }

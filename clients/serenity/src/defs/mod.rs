@@ -3,6 +3,7 @@ extern crate serde_json;
 
 use position::{Pos};
 use strings::{ HIT, DIE, SEE, RADARECHO, DETECTED, DAMAGED, MOVE, NOACTION, INVALID };
+use std::fmt;
 
 include!(concat!(env!("OUT_DIR"), "/defs.rs"));
 
@@ -84,3 +85,10 @@ pub fn parse_event(ev: &SomeEvent) -> Event {
         }
     }
 }
+
+impl fmt::Display for Action {
+    fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {}", self.bot_id, self.action_type, self.pos)
+    }
+}
+

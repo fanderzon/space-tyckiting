@@ -36,8 +36,11 @@ impl Ai {
             if *radar_index > positions.len() as i16 - 1 {
                 *radar_index = 0;
             }
-            actions.set_action_for(bot_id, RADAR, self.radar_positions.1[*radar_index as usize]);
+            let target = self.radar_positions.1[*radar_index as usize];
+            actions.set_action_for(bot_id, RADAR, target);
             *radar_index += 1;
+
+            self.logger.log(&format!("Scanning with Bot {} on {} b/c it was idle.", bot_id, target), 2);
         }
     }
 }

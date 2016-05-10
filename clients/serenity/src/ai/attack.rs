@@ -23,10 +23,6 @@ impl Ai {
             }
         }
         
-        if let Some(t) = target {
-            self.logger.log(&format!("Targetting {} for attack.", t), 2);
-        }
-
         let mode;
         // Separate the logic needed if we only have one bot left
         if self.bots_alive() == 1 {
@@ -108,7 +104,7 @@ impl Ai {
             // If evading we can't really attack
             if self.bots_available_for_attack(&actions) < 1 {
                 println!("No bots available for attack");
-                self.logger.log("Bot not available for attack. Not attacking.", 2);
+                self.logger.log("Bot not available for attack. Not attacking.", 3);
                 return mode;
             }
 
@@ -116,7 +112,7 @@ impl Ai {
             if let Some(t) = target {
                 println!("Attacking with bot {:?}", &bot);
                 actions.set_action_for(bot.id, CANNON, t.random_spread());
-                self.logger.log(&format!("Shooting at {} with bot {}", t, bot.id), 2);
+                self.logger.log(&format!("Shooting at {} with bot {}", t, bot.id), 3);
                 return true;
             };
 
@@ -139,7 +135,7 @@ impl Ai {
                         actions.set_action_for(bot.id, RADAR, radar_target);
                         self.logger.log(&format!(
                             "Radaring at {} with bot {} because we shot there last round.", 
-                            radar_target, bot.id), 2);
+                            radar_target, bot.id), 3);
                     };
                 }
             }
@@ -174,21 +170,25 @@ impl Ai {
     }
 
     // Takes the action array and a position to attack and modifies it
-    pub fn all_shoot_or_scan(&self, actions: &mut Vec<Action>, target: Pos) {
+    pub fn all_shoot_or_scan(&mut self, actions: &mut Vec<Action>, target: Pos) {
         println!("All shoot or scan");
+        self.logger.log(&format!("All shoot/scanning {}", target), 2);
         let mut radared: bool = false;
         for bot in &self.bots {
             if bot.alive == true {
                 if Some(actions.get_action(bot.id)).unwrap().unwrap().action_type == MOVE.to_string() {
                     // Already on the move, let's keep it that way
                     println!("Already on the move, not changing bot {:?}", bot.id);
+                    self.logger.log(&format!("Bot {} is evading, we're not changing that.",  bot.id), 3);
                 } else if radared == false && self.bots_alive() > 1 {
                     println!("Setting attack radar for bot {:?}", bot.id);
                     actions.set_action_for(bot.id, RADAR, target);
                     radared = true;
+                    self.logger.log(&format!("Setting bot {} to RADAR at {}", bot.id, target), 3);
                 } else {
                     actions.set_action_for(bot.id, CANNON, target.random_spread().clamp(&self.config.field_radius));
                     println!("Setting attack cannon for bot {:?}", bot.id);
+                    self.logger.log(&format!("Setting bot {} to CANNON at {}", bot.id, target), 3);
                 }
             }
         }
