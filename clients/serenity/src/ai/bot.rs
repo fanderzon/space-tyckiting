@@ -2,6 +2,7 @@ use defs;
 use position::Pos;
 
 #[allow(dead_code)]
+#[derive(Debug,Clone)]
 pub struct Bot {
     pub id: i16,
     pub name: String,

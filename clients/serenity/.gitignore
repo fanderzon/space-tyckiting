@@ -1,3 +1,4 @@
 *.swp
 testrun_client1_log.txt
 testrun_client2_log.txt
+*.log

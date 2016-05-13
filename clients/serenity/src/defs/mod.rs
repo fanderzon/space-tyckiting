@@ -2,10 +2,12 @@ extern crate serde;
 extern crate serde_json;
 
 use position::{Pos};
-use strings::{ HIT, DIE, SEE, RADARECHO, DETECTED, DAMAGED, MOVE, NOACTION }; 
+use strings::{ HIT, DIE, SEE, RADARECHO, DETECTED, DAMAGED, MOVE, NOACTION, INVALID };
+use std::fmt;
 
 include!(concat!(env!("OUT_DIR"), "/defs.rs"));
 
+#[derive(Clone, Debug)]
 pub enum Event {
     Hit(HitEvent),
     Die(DieEvent),
@@ -16,6 +18,19 @@ pub enum Event {
     Move(MoveEvent),
     Noaction(NoactionEvent),
     Invalid,
+}
+
+pub fn get_event_name(event: &Event) -> &str {
+    match event {
+        &Event::Hit(_) => HIT,
+        &Event::Die(_) => DIE,
+        &Event::See(_) => SEE,
+        &Event::Echo(_) => RADARECHO,
+        &Event::Detected(_) => DETECTED,
+        &Event::Damaged(_) => DAMAGED,
+        &Event::Move(_) => MOVE,
+        _ => INVALID,
+    }
 }
 
 pub fn parse_event(ev: &SomeEvent) -> Event {
@@ -68,6 +83,12 @@ pub fn parse_event(ev: &SomeEvent) -> Event {
         _ => {
             return Event::Invalid;
         }
+    }
+}
+
+impl fmt::Display for Action {
+    fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {}", self.bot_id, self.action_type, self.pos)
     }
 }
 

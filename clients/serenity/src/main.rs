@@ -9,6 +9,7 @@ mod util;
 mod ai;
 mod position;
 mod lists;
+mod log;
 
 use std::str::from_utf8;
 use websocket::{Message, Sender, Receiver};
@@ -17,7 +18,7 @@ use websocket::ws::dataframe::DataFrame;
 use rand::Rng;
 use strings::{CONNECTED, JOIN, EVENTS, END};
 use ai::Ai;
-use defs::{IncomingMessage, IncomingEvents};
+use defs::{IncomingMessage, IncomingEvents, IncomingEnd};
 
 fn main() {
     let (mut sender, mut receiver) = util::connect();
@@ -53,7 +54,13 @@ fn main() {
                         sender.send_message(&actions_message).expect("Sending actions message failed.");
                     }
                     END => {
-                        println!("Got end message, we're ending!");
+                        let end: IncomingEnd = serde_json::from_str(&pl).unwrap();
+                        println!("Game ended!");
+                        if end.you.team_id == end.winner_team_id {
+                            println!("WE WON!!!");
+                        } else {
+                            println!("WE DIDN'T WIN!!!");
+                        }
                         break;
                     }
                     ev => {
