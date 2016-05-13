@@ -23,6 +23,9 @@ pub struct Ai {
     game_map: Vec<Pos>,
     // One entry per game round, could be a bit risky if rounds don't come in order
     history: Vec<HistoryEntry>,
+    maybe_asteroids: Vec<Pos>,
+    asteroids: Vec<Pos>,
+    probing: Vec<(i16, Pos)>,
     config: Config,
     logger: Logger,
 }
@@ -69,6 +72,9 @@ impl Ai {
             radar_positions: (0, radar_positions.clone()),
             game_map: game_map.clone(),
             history: Vec::new(),
+            maybe_asteroids: Vec::new(),
+            asteroids: Vec::new(),
+            probing: Vec::new(),
             config: start.config.clone(),
             logger: Logger::new(),
         };
@@ -99,8 +105,17 @@ impl Ai {
     fn update_state(&mut self, events: &Vec<Event>) {
         self.logger.log("Events:", 1);
         let mut log: Vec<(String, usize)> = Vec::new();
+
+        let mut neg_probes: Vec<Pos> = Vec::new();
+
         for event in events {
             match *event {
+                Hit(ref ev) => {
+                    let probe = self.probing.into_iter().find(|&(id, pos)| ev.source == id);
+                    if let Some((_, pos)) = probe {
+                        neg_probes.push(pos);
+                    }
+                }
                 Die(ref ev) => {
                     let bot_opt = self.get_bot_mut(ev.bot_id);
                     if let Some(bot) = bot_opt {
@@ -114,7 +129,8 @@ impl Ai {
                     log.push((format!("See enemy on {:?}", ev.pos), 2));
                 }
                 Echo(ref ev) => {
-                    log.push((format!("RadarEcho enemy on {}", ev.pos), 2));
+                    log.push((format!("RadarEcho enemy/asteroid on {}", ev.pos), 2));
+                    self.maybe_asteroids.push(ev.pos.clone());
                 }
                 Damaged(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
@@ -138,6 +154,13 @@ impl Ai {
                 _ => {}
             }
         }
+
+        // Retain all asteroids that were not probed as ships
+        self.maybe_asteroids.retain(|ast| 
+            neg_probes.iter().find(|neg_probe| neg_probe.distance(*ast) <= self.config.cannon).is_none()
+        );
+
+        //self.asteroids.append(self.maybe_asteroids);
 
         self.logger.write_q(&log);
     }
