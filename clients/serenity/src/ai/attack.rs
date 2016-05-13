@@ -1,11 +1,65 @@
 use defs::{ Action, Event, DieEvent };
-use strings::{ CANNON, RADAR, MOVE, SEE, RADARECHO, DIE, MODE_ATTACK };
+use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE, MODE_ATTACK, MODE_SCAN };
 use position::Pos;
 use ai::*;
 use lists::*;
 use ai::bot::Bot;
 
 impl Ai {
+    // Will alternate between all bots shooting at the last echo and 1 bot scanning
+    // while the rest free bots shoots
+    // Returns a Some(attack_mode) or None TODO: Maybe attack mode should be an enum?
+    pub fn aggressive_attack_strategy(&mut self, mut actions: &mut Vec<Action>) -> bool {
+        let last_mode;
+        {
+            let last_round = if self.round_id - 1 >= 0 { self.round_id - 1 } else { 0 };
+            let round_entry = &self.history.get(&last_round).unwrap();
+            println!("Round entry {:?}", round_entry);
+            last_mode = round_entry.mode.clone();
+        }
+        println!("Last mode {:?}", last_mode);
+
+        // Gets tuples of (Pos,round_id) from echo/see events in the last n rounds
+        let see_positions = self.history.get_echo_positions(5);
+
+        // Are there any echoes this round? shoot at them...
+        if see_positions.iter().filter(|tup|tup.1 == self.round_id).count() > 0 {
+            println!("Radar position found {:?}", see_positions[0].0.clone());
+            self.attack_pos(&mut actions, see_positions[0].0.clone());
+            return true;
+        }
+
+        // Gets tuples of (Event,round_id) from hit events in the last n rounds
+        let hit_events = self.history.get_events( HIT, 5 );
+        println!("hit_events {:?}", hit_events);
+        let hit_events_this_round = hit_events.iter().cloned().filter(|tup|tup.1 == self.round_id).collect::<Vec<(Event,i16)>>();
+        println!("hit_events_this_round {:?}", hit_events_this_round);
+        if hit_events_this_round.len() > 0 {
+            println!("Found hit event {:?}", hit_events_this_round[0]);
+            if let Some(pos) = self.get_pos_from_hit(&hit_events_this_round[0].0, &self.round_id) {
+                println!("Pos of last hit {:?}", pos);
+                self.attack_pos(&mut actions, pos.clone());
+            }
+        }
+
+        // So far we have not really used the mode because we've had fresh data
+        // of something to shoot at, this is where we look if we are in attack mode
+        // but just had some bad luck last round
+
+
+
+
+        return false;
+    }
+
+    pub fn attack_pos(&mut self, mut actions: &mut Vec<Action>, attack_pos: Pos) {
+        let radius = self.config.field_radius;
+        self.bots.iter_mut()
+        .zip( attack_pos.triangle_smart())
+        .map(|(&mut ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
+        .count();
+    }
+
     pub fn attack_and_scan_if_target(&mut self, mut actions: &mut Vec<Action>) -> bool {
         let mut target: Option<Pos> = None;
         // println!("Bots available for attack {:?}", self.bots_available_for_attack(&actions));
@@ -22,7 +76,7 @@ impl Ai {
                 _ => ()
             }
         }
-        
+
         let mode;
         // Separate the logic needed if we only have one bot left
         if self.bots_alive() == 1 {
@@ -72,6 +126,33 @@ impl Ai {
         return true;
     }
 
+    // Give a position, get back the latest echo/see position within your max_radius
+    // and what round it was
+    fn find_echo_within_radius(&self, target: Pos, max_radius: i16) -> Option<(Pos,i16)> {
+        // get relevant events 10 rounds back
+        let mut see_events = self.history.get_events( SEE, 10 );
+        see_events.append(&mut self.history.get_events( RADARECHO, 10 ));
+
+        see_events
+            .iter()
+            .cloned()
+            .map(|tup| {
+                match tup.0 {
+                    Event::See(ref ev) => (ev.pos.clone(), tup.1),
+                    Event::Echo(ref ev) => (ev.pos.clone(), tup.1),
+                    _ => (Pos::default(), 0)
+                }
+            })
+            .filter(|&(ref pos, ref round_id)| pos.distance(target) <= max_radius)
+            .fold(None, |acc, curr| {
+                if let Some(a) = acc {
+                    if curr.1 >= a.1 { Some(curr) } else { Some(a) }
+                } else {
+                    Some(curr)
+                }
+            })
+    }
+
     // Returns the number of bots that are alive and not evading
     pub fn bots_available_for_attack(&self, actions: &Vec<Action>) -> usize {
         self.bots
@@ -111,7 +192,7 @@ impl Ai {
             // If we have a active target this is pretty easy, shoot at it
             if let Some(t) = target {
                 println!("Attacking with bot {:?}", &bot);
-                actions.set_action_for(bot.id, CANNON, t.random_spread());
+                actions.set_action_for(bot.id, CANNON, t.random_spread().clamp(&self.config.field_radius));
                 self.logger.log(&format!("Shooting at {} with bot {}", t, bot.id), 3);
                 return true;
             };
@@ -126,15 +207,23 @@ impl Ai {
 
                 if last_round.mode == MODE_ATTACK.to_string() {
                     let some_cannon_action = last_round.actions
-                        .iter() 
+                        .iter()
                         .find(|ac| ac.action_type == CANNON.to_string());
                     if let Some(cannon_action) = some_cannon_action {
-                        let radar_target = cannon_action.pos.random_spread();
+                        let radar_target;
+                        if let Some(echo_target) = self.find_echo_within_radius(cannon_action.pos.clone(), 2) {
+                            println!("Radaring based on last known position {:?}", echo_target);
+                            radar_target = echo_target.0;
+                        } else {
+                            println!("Radaring based on last shot {:?}", cannon_action.pos);
+                            radar_target = cannon_action.pos
+                        }
+
                         // TODO: Should radar with spread from the previous round's target, not
                         // actual position shot (because then we get two spreads).
                         actions.set_action_for(bot.id, RADAR, radar_target);
                         self.logger.log(&format!(
-                            "Radaring at {} with bot {} because we shot there last round.", 
+                            "Radaring at {} with bot {} because we shot there last round.",
                             radar_target, bot.id), 3);
                     };
                 }
@@ -197,22 +286,25 @@ impl Ai {
     // See if we need this for anything, with the current logic probably not
     // Maybe some edge cases with the one bot strategy?
     #[allow(dead_code)]
-    fn get_pos_from_hit_entry(&self, event_entry: &(Event,i16)) -> Option<Pos> {
-        let previous_round: i16 = event_entry.1 - 1;
+    fn get_pos_from_hit(&self, hit_event: &Event, round_id: &i16) -> Option<Pos> {
+        let previous_round: i16 = round_id - 1;
         let mut source: i16 = -1;
-        match event_entry.0 {
-            Event::Hit(ref ev) => source = ev.source,
+        match hit_event {
+            &Event::Hit(ref ev) => source = ev.source,
             _ => ()
         };
+        println!("get_pos_from_hit_entry previous round {:?} source {}", previous_round, source);
         let cannons = self.history
-            .get_actions( CANNON, 20 )
+            .get_actions_for_round( CANNON, previous_round )
             .iter()
             .cloned()
-            .filter(|&(ref ev, ref round_id)| *round_id == previous_round && ev.bot_id == source)
-            .collect::<Vec<(Action,i16)>>();
+            .filter(|ac| ac.bot_id == source)
+            .collect::<Vec<Action>>();
+            println!("Cannon matches {:?}", cannons);
+            println!("Cannon actions {:?}", self.history.get_actions_for_round( CANNON, previous_round ));
         // Should be guaranteed to have 1 cannon match
         if cannons.len() > 0 {
-            return Some(cannons[0].0.pos);
+            return Some(cannons[0].pos);
         } else {
             return None;
         }

@@ -42,11 +42,11 @@ impl Ai {
         self.evade_if_needed(&mut actions);
 
         // Attack if we have a target, evading bots will continue evading
-        let attacking: bool = self.attack_and_scan_if_target(&mut actions);
+        let attacking: bool = self.aggressive_attack_strategy(&mut actions);
 
         // If not attacking, use non evading bots to scan in a sequence
         if attacking {
-            mode = MODE_ATTACK.to_string()
+            mode = MODE_ATTACK.to_string();
         } else {
             self.scan_with_idle_bots(&mut actions);
         }
@@ -155,8 +155,10 @@ impl Ai {
 
         // Get mode and actions for the round and add those to history too
         let (mode,actions) = self.make_decisions();
-        self.history.set_mode(&mode);
+        println!("setting mode {:?}", mode);
+
         self.history.add_actions(&self.round_id, &actions);
+        self.history.set_mode(&self.round_id, &mode);
 
         self.logger.log(&actions.render(), 2);
         return self.make_actions_message(actions);
@@ -174,5 +176,3 @@ impl Ai {
 fn gen_bots(start: &defs::Start) -> Vec<Bot> {
     return start.you.bots.iter().map(Bot::new).collect();
 }
-
-
