@@ -11,7 +11,7 @@ var _ = require("lodash");
 var game = require("./server/game.js");
 
 var defaultConfig = {
-    bots: 3,
+    bots: 4,
     fieldRadius: 14,
     move: 2,
     startHp: 10,
@@ -19,7 +19,7 @@ var defaultConfig = {
     radar: 3,
     see: 2,
     maxCount: 200,
-    asteroids: 0,
+    asteroids: 4,
     loopTime: 300,
     noWait: false
 };
