@@ -42,6 +42,7 @@ impl Ai {
         if see_positions_this_round.len() > 0 {
             println!("Radar position found this round {:?}", see_positions_this_round[0].0.clone());
             self.attack_pos(&mut actions, see_positions_this_round[0].0.clone());
+            self.log_attack_actions(&actions, "have fresh seen data");
             return true;
         }
 
@@ -66,6 +67,7 @@ impl Ai {
             if let Some(pos) = self.get_pos_from_hit(&hit_events_this_round[0].0, &self.round_id) {
                 println!("Found pos of last hit, attacking {:?}", pos);
                 self.attack_pos(&mut actions, pos.clone());
+                self.log_attack_actions(&actions, "have fresh hit data");
                 return true;
             }
         }
@@ -82,6 +84,7 @@ impl Ai {
             if see_positions_last_round.len() > 0 {
                 println!("Radar position found last round {:?}", see_positions_last_round[0].0.clone());
                 self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0.clone());
+                self.log_attack_actions(&actions, "have one round old seen data");
                 return true;
             }
 
@@ -93,6 +96,7 @@ impl Ai {
                 if let Some(pos) = self.get_pos_from_hit(&hit_events_last_round[0].0, &last_round) {
                     println!("Pos of last round hit {:?}", pos);
                     self.attack_and_scan_pos(&mut actions, pos.clone());
+                    self.log_attack_actions(&actions, "have one round old hit data");
                     return true;
                 }
             }
@@ -100,6 +104,12 @@ impl Ai {
         }
 
         return false;
+    }
+
+    fn log_attack_actions(&mut self, actions: &Vec<Action>, motivation: &str, ) {
+        for action in actions {
+            self.logger.log(&format!("Attack with Bot {} on {} b/c {}.", action.bot_id, action.pos, motivation), 2);
+        }
     }
 
     // Will just attack a position with all we've got

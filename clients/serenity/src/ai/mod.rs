@@ -50,7 +50,7 @@ impl Ai {
         } else {
             self.scan_with_idle_bots(&mut actions);
         }
-        self.logger.log(&format!("Attackmode: {}", mode), 2);
+        self.logger.log(&format!("Mode: {}", mode), 2);
 
         println!("Action are {:?}", actions);
         // Filter out NOACTIONs before sending to server
