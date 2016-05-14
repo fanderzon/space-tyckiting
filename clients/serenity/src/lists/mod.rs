@@ -73,10 +73,11 @@ pub trait HistoryList {
     fn get_events_for_round(&self, match_event: &str, round_id: i16) -> Vec<Event>;
     fn get_last_enemy_position(&self) -> Option<(Event, i16)>;
     fn get_last_attack_action(&self) -> Option<(Action, i16)>;
+    fn get_echo_positions(&self, since: i16) -> Vec<(Pos,i16)>;
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)>;
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action>;
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action>;
-    fn set_mode(&mut self, mode: &str);
+    fn set_mode(&mut self, round_id: &i16, mode: &str);
     fn get_mode(&self, round_id: &i16) -> String;
 }
 
@@ -214,6 +215,26 @@ impl HistoryList for Vec<HistoryEntry> {
         return None;
     }
 
+    // Convenience method returning an optional tuple of Pos and round_id for all see/echo events
+    #[allow(dead_code)]
+    fn get_echo_positions(&self, since: i16) -> Vec<(Pos,i16)> {
+        // get all echo positions
+        let mut see_events = self.get_events( SEE, since );
+        see_events.append(&mut self.get_events( RADARECHO, since ));
+
+        see_events
+            .iter()
+            .cloned()
+            .map(|tup| {
+                match tup.0 {
+                    Event::See(ref ev) => (ev.pos.clone(), tup.1),
+                    Event::Echo(ref ev) => (ev.pos.clone(), tup.1),
+                    _ => (Pos::default(), 0)
+                }
+            })
+            .collect()
+    }
+
     // Returns each matching action as a tuple with round_id as second value
     #[allow(dead_code,unused_variables)]
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)> {
@@ -263,11 +284,11 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     #[allow(dead_code)]
-    fn set_mode(&mut self, mode: &str) {
-        let last = self.len() as i16 - 1;
-        match self.get_mut(&last) {
-            Some(h) => h.mode = mode.to_string(),
-            None => (),
+    fn set_mode(&mut self, round_id: &i16, mode: &str) {
+
+        match self.get_mut(&round_id) {
+            Some(history_entry) => history_entry.mode = mode.to_string(),
+            None => ()
         }
     }
 

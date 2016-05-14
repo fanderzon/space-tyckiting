@@ -11,6 +11,30 @@ use std::fmt;
 include!(concat!(env!("OUT_DIR"), "/position.rs"));
 
 impl Pos {
+    // Abstraction for the attacking methods to use
+    // They pass in the number of available bots and this method will use the
+    // right spread strategy for that number and return a vector
+    // TODO: Implement actual smart shooting
+    pub fn smart_attack_spread(&self, available_bots: i16) -> Vec<Pos> {
+        let mut shoot_at: Vec<Pos> = Vec::new();
+
+        match available_bots {
+            // If 4, shoot smart with 3 of them and randomly with the 4th
+            4 => {
+                shoot_at = self.triangle_smart();
+                shoot_at.push(self.random_spread());
+            },
+            3 => shoot_at = self.triangle_smart(),
+            1|2 => {
+                for i in 0..available_bots {
+                    shoot_at.push(self.random_spread());
+                }
+            },
+            _ => ()
+        }
+        shoot_at
+    }
+
     pub fn triangle_smart(&self) -> Vec<Pos> {
         let mut triangle = match rand::thread_rng().gen_range(0, 2) {
             0 => { self.triangle_left() }
