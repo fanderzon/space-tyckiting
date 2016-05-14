@@ -4,7 +4,7 @@ use position::Pos;
 use defs;
 use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION };
+use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION, CANNON };
 use lists::*;
 use ai::bot::Bot;
 use log::Logger;
@@ -19,13 +19,8 @@ pub struct Ai {
     bots: Vec<Bot>,
     round_id: i16,
     radar_positions: (i16, Vec<Pos>),
-    #[allow(dead_code)]
-    game_map: Vec<Pos>,
-    // One entry per game round, could be a bit risky if rounds don't come in order
     history: Vec<HistoryEntry>,
-    maybe_asteroids: Vec<Pos>,
     asteroids: Vec<Pos>,
-    probing: Vec<(i16, Pos)>,
     config: Config,
     logger: Logger,
 }
@@ -64,18 +59,13 @@ impl Ai {
         // TODO: separate into smaller functions to do set up
         let mut radar: radar::Radar = radar::Radar::new();
         let radar_positions = &radar.get_radar_positions(&start.config);
-        let mut game_map: Vec<Pos> = Pos { x: 0, y: 0 }.neighbors(&start.config.field_radius);
-        game_map.push(Pos { x: 0, y: 0 });
 
         return Ai {
             bots: gen_bots(start),
             round_id: -1,
             radar_positions: (0, radar_positions.clone()),
-            game_map: game_map.clone(),
             history: Vec::new(),
-            maybe_asteroids: Vec::new(),
             asteroids: Vec::new(),
-            probing: Vec::new(),
             config: start.config.clone(),
             logger: Logger::new(),
         };
@@ -93,20 +83,53 @@ impl Ai {
         };
     }
 
+    fn is_pos_in_cannon_actions(&self, pos: Pos, cannon_positions: &Vec<Pos>) -> bool {
+        if cannon_positions.iter().filter(|cp| cp.distance(pos) <= 1).count() > 0 {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn filter_asteroids_from_events(&self, events: &Vec<Event>) -> Vec<Event> {
+        events
+            .iter()
+            .cloned()
+            .filter(|event| {
+                match *event {
+                    Echo(ref ev) => {
+                        if self.asteroids.iter().filter(|pos| pos.distance(ev.pos) == 0).count() > 0 {
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                    _ => true
+                }
+            })
+            .collect::<Vec<_>>()
+    }
+
     // Purpose: go through events and update our state so it's up to date for decisionmaking later
     fn update_state(&mut self, events: &Vec<Event>) {
         self.logger.log("Events:", 1);
         let mut log: Vec<(String, usize)> = Vec::new();
+        let last_round_cannon_positions: Vec<Pos> = self.history
+            .get_actions_for_round( CANNON, self.round_id - 1 )
+            .iter()
+            .cloned()
+            .map(|ac|ac.pos)
+            .collect();
 
         let mut neg_probes: Vec<Pos> = Vec::new();
 
         for event in events {
             match *event {
                 Hit(ref ev) => {
-                    let probe = self.probing.into_iter().find(|&(id, pos)| ev.source == id);
-                    if let Some((_, pos)) = probe {
-                        neg_probes.push(pos);
-                    }
+                    // let probe = self.probing.into_iter().find(|&(id, pos)| ev.source == id);
+                    // if let Some((_, pos)) = probe {
+                    //     neg_probes.push(pos);
+                    // }
                 }
                 Die(ref ev) => {
                     let bot_opt = self.get_bot_mut(ev.bot_id);
@@ -119,10 +142,18 @@ impl Ai {
                 }
                 See(ref ev) => {
                     log.push((format!("See enemy on {:?}", ev.pos), 2));
+                    // Is it an asteroid?
+                    if self.is_pos_in_cannon_actions(ev.pos, &last_round_cannon_positions) {
+                        log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
+                        self.asteroids.push(ev.pos);
+                    }
                 }
                 Echo(ref ev) => {
                     log.push((format!("RadarEcho enemy/asteroid on {}", ev.pos), 2));
-                    self.maybe_asteroids.push(ev.pos.clone());
+                    if self.is_pos_in_cannon_actions(ev.pos, &last_round_cannon_positions) {
+                        log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
+                        self.asteroids.push(ev.pos);
+                    }
                 }
                 Damaged(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
@@ -147,13 +178,6 @@ impl Ai {
             }
         }
 
-        // Retain all asteroids that were not probed as ships
-        self.maybe_asteroids.retain(|ast| 
-            neg_probes.iter().find(|neg_probe| neg_probe.distance(*ast) <= self.config.cannon).is_none()
-        );
-
-        //self.asteroids.append(self.maybe_asteroids);
-
         self.logger.write_q(&log);
     }
 
@@ -164,8 +188,9 @@ impl Ai {
         let events = events_json.events.iter().map(defs::parse_event).collect();
         self.update_state(&events);
 
-        // Add events to history
-        self.history.add_events(&self.round_id, &events);
+        // Add events to history after filtering out asteroids
+        let events_without_asteroids: Vec<Event> = self.filter_asteroids_from_events(&events);
+        self.history.add_events(&self.round_id, &events_without_asteroids);
 
         // Get mode and actions for the round and add those to history too
         let (mode,actions) = self.make_decisions();

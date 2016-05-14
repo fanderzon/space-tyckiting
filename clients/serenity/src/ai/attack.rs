@@ -39,9 +39,18 @@ impl Ai {
         // Are there any echoes this round? shoot at them...
         let see_positions_this_round = see_positions.iter()
             .filter(|tup|tup.1 == self.round_id).collect::<Vec<_>>();
+        println!("See positions this round {:?}", see_positions_this_round);
         if see_positions_this_round.len() > 0 {
             println!("Radar position found this round {:?}", see_positions_this_round[0].0.clone());
-            self.attack_pos(&mut actions, see_positions_this_round[0].0.clone());
+
+            // Because of asteroids we want to make sure that the first time we see something
+            // We scan as we shoot so we can mark detect asteroids
+            if last_mode == MODE_SCAN.to_string() {
+                self.attack_and_scan_pos(&mut actions, see_positions_this_round[0].0.clone());
+            } else {
+                self.attack_pos(&mut actions, see_positions_this_round[0].0.clone());
+            }
+
             self.log_attack_actions(&actions, "have fresh seen data");
             return true;
         }
@@ -81,6 +90,8 @@ impl Ai {
             // how about last round?
             let see_positions_last_round = see_positions.iter()
                 .filter(|tup|tup.1 == last_round).collect::<Vec<_>>();
+
+            println!("see_positions_last_round {:?}", see_positions_last_round);
             if see_positions_last_round.len() > 0 {
                 println!("Radar position found last round {:?}", see_positions_last_round[0].0.clone());
                 self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0.clone());
@@ -114,18 +125,22 @@ impl Ai {
 
     // Will just attack a position with all we've got
     // Typical use: We have a fresh echo or hit (from this round)
+    #[allow(dead_code)]
     pub fn attack_pos(&mut self, mut actions: &mut Vec<Action>, target: Pos) {
         let radius = self.config.field_radius;
-        let bots_alive = self.bots_alive() as i16;
-        self.bots.iter_mut()
+        let available_bots = self.get_live_bots();
+        let bots_alive = available_bots.len() as i16;
+
+        available_bots.iter()
             .zip(target.smart_attack_spread(bots_alive))
-            .map(|(&mut ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
+            .map(|(&ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
             .count();
     }
 
     // Will attack a position, but also make sure we scan it to not lose track of the target
     // Typical use: We have a 1 round old echo or hit
     pub fn attack_and_scan_pos(&mut self, mut actions: &mut Vec<Action>, target: Pos) {
+        println!("attack_and_scan_pos: avilable bots {:?}", self.get_live_bots());
         // Let's first get available bots, I'm going to filter out bots on the move
         // but this is optional depending on how aggressive we want to be
         let available_bots = self.get_live_bots()
