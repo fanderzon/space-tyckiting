@@ -155,7 +155,6 @@ impl HistoryList for Vec<HistoryEntry> {
     #[allow(dead_code,unused_variables)]
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)> {
         let last_round = self.len() as i16 - 1;
-        println!("Get events {:?} round {} since {}", match_event, last_round, since);
         self
             .iter()
             .filter(|he| he.round_id > last_round - since  )
@@ -286,11 +285,10 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn set_mode(&mut self, round_id: &i16, mode: &str) {
-        println!("Setting mode to {} for {:?}", mode, round_id);
 
         match self.get_mut(&round_id) {
-            Some(history_entry) => {println!("history_entry {:?}", history_entry);history_entry.mode = mode.to_string()},
-            None => { println!("Matched none on set_mode") }
+            Some(history_entry) => history_entry.mode = mode.to_string(),
+            None => ()
         }
     }
 

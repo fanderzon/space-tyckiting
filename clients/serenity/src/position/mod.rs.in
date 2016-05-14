@@ -38,11 +38,12 @@ impl Pos {
                 shoot_at.push(self.random_spread());
             },
             3 => shoot_at = self.triangle_smart(),
-            _ => {
-                for 0..available_bots {
+            1|2 => {
+                for i in 0..available_bots {
                     shoot_at.push(self.random_spread());
                 }
-            }
+            },
+            _ => ()
         }
         shoot_at
     }

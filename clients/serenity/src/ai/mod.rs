@@ -50,6 +50,7 @@ impl Ai {
         } else {
             self.scan_with_idle_bots(&mut actions);
         }
+        self.logger.log(&format!("Attackmode: {}", mode), 2);
 
         println!("Action are {:?}", actions);
         // Filter out NOACTIONs before sending to server
@@ -74,16 +75,6 @@ impl Ai {
         };
     }
 
-    fn bots_alive(&self) -> usize {
-        self.bots.iter().filter(|bot| bot.alive ).count()
-    }
-
-    fn is_our_bot(&self, bot_id: i16) -> bool {
-        match self.get_bot(bot_id) {
-            Some(_) => return true,
-            _ => return false
-        }
-    }
 
     // TODO: This does not actually need to be mutable
     fn make_actions_message(&self, mut actions: Vec<Action>) -> ActionsMessage {
@@ -155,7 +146,6 @@ impl Ai {
 
         // Get mode and actions for the round and add those to history too
         let (mode,actions) = self.make_decisions();
-        println!("setting mode {:?}", mode);
 
         self.history.add_actions(&self.round_id, &actions);
         self.history.set_mode(&self.round_id, &mode);
@@ -170,6 +160,21 @@ impl Ai {
 
     fn get_bot_mut(&mut self, id: i16) -> Option<&mut Bot> {
         return self.bots.iter_mut().find(|bot|bot.id == id);
+    }
+
+    fn bots_alive(&self) -> usize {
+        self.bots.iter().filter(|bot| bot.alive ).count()
+    }
+
+    pub fn get_live_bots(&self) -> Vec<Bot> {
+        self.bots.iter().filter(|bot| bot.alive ).cloned().collect::<Vec<_>>()
+    }
+
+    pub fn is_our_bot(&self, bot_id: i16) -> bool {
+        match self.get_bot(bot_id) {
+            Some(_) => true,
+            None => false,
+        }
     }
 }
 
