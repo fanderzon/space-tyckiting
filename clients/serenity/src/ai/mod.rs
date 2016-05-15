@@ -96,8 +96,8 @@ impl Ai {
     // AND there is no hit event at that position we have an asteroid and return true
     // Otherwise return false
     fn is_echo_an_asteroid(&self, pos: Pos, cannon_positions: &Vec<Pos>, hit_events: &Vec<Event>) -> bool {
-        // If we have already recorded all asteroids on the board don't even bother to check
-        if self.asteroids.len() as i16 == self.config.asteroids {
+        // Check if this is already a recorded asteroid to save some work
+        if self.is_pos_a_recorded_asteroid(pos) {
             return false;
         }
 
@@ -195,8 +195,10 @@ impl Ai {
                     log.push((format!("See enemy on {:?}", ev.pos), 2));
                 }
                 Echo(ref ev) => {
+                    println!("RadarEcho enemy/asteroid on {:?}", ev.pos);
                     log.push((format!("RadarEcho enemy/asteroid on {}", ev.pos), 2));
                     if self.is_echo_an_asteroid(ev.pos, &last_round_cannon_positions, &hit_events_this_round) {
+                        println!("Echo {:?} is an asteroid", ev.pos);
                         log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
                         self.asteroids.push(ev.pos);
                     }
