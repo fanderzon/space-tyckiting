@@ -96,21 +96,23 @@ impl Ai {
     // AND there is no hit event at that position we have an asteroid and return true
     // Otherwise return false
     fn is_echo_an_asteroid(&self, pos: Pos, cannon_positions: &Vec<Pos>, hit_events: &Vec<Event>) -> bool {
-        println!("is_echo_an_asteroid {:?}", pos);
+        // If we have already recorded all asteroids on the board don't even bother to check
+        if self.asteroids.len() as i16 == self.config.asteroids {
+            return false;
+        }
+
         // First we check if the position matches any cannon actions
         // Otherwise we can't draw any conclusions
         if self.is_pos_in_cannon_actions(pos, &cannon_positions) {
             // Next see if we can find a hit event on that position
             hit_events.iter().cloned().map(|ref event| {
                 if let Some(p) = self.get_pos_from_hit(&event, &self.round_id) {
-                    println!("Asteroid search got pos from hit {:?} {:?}", event, p);
                     if p.distance(pos) == 0 {
                         return false;
                     }
                 }
                 true
             }).count();
-
             // The position was in cannon actions but didn't match any hits.... ASTEROID!!!
             return true;
         } else {
@@ -119,6 +121,16 @@ impl Ai {
         }
     }
 
+    pub fn is_pos_a_recorded_asteroid(&self, pos: Pos) -> bool {
+        if let Some(_) = self.asteroids
+            .iter()
+            .find(|asteroid_pos| asteroid_pos.distance(pos) == 0)
+        {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     fn filter_asteroids_from_events(&self, events: &Vec<Event>) -> Vec<Event> {
         events
@@ -149,7 +161,16 @@ impl Ai {
             .cloned()
             .map(|ac|ac.pos)
             .collect();
-        let hit_events_this_round = self.history.get_events_for_round( HIT, self.round_id );
+        let hit_events_this_round = events
+            .iter()
+            .cloned()
+            .filter(|event| {
+                match *event {
+                    Hit(_) => true,
+                    _ => false,
+                }
+            })
+            .collect::<Vec<_>>();
 
         let mut neg_probes: Vec<Pos> = Vec::new();
 
@@ -176,11 +197,8 @@ impl Ai {
                 Echo(ref ev) => {
                     log.push((format!("RadarEcho enemy/asteroid on {}", ev.pos), 2));
                     if self.is_echo_an_asteroid(ev.pos, &last_round_cannon_positions, &hit_events_this_round) {
-                        println!("Echo {:?} is an asteroid", ev.pos);
                         log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
                         self.asteroids.push(ev.pos);
-                    } else {
-                        println!("Echo {:?} is not an asteroid", ev.pos);
                     }
                 }
                 Damaged(ref ev) => {

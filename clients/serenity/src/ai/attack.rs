@@ -29,7 +29,7 @@ impl Ai {
         let see_positions = self.history.get_echo_positions(5);
 
         // Don't continue to attack if we killed something
-        // TODO: Look hit events with this bot_id, then get the pos of that hit id
+        // TODO: Look at hit events with this bot_id, then get the pos of that hit id
         // and check if we have other radar echoes to pursue
         if let Some(ev) = self.get_possible_die_event() {
             println!("We killed something, back to scanning: {:?}", ev);
@@ -85,13 +85,13 @@ impl Ai {
         // of something to shoot at, this is where we look if we are in attack mode
         // but just had some bad luck last round
         if last_mode == MODE_ATTACK.to_string() {
-            println!("We were attacking last round, let's continue with that");
+            println!("We were attacking last round, let's continue with that if we can");
             // Since we got here we know we have no echoes or hits this round,
             // how about last round?
             let see_positions_last_round = see_positions.iter()
+                .filter(|tup|!self.is_pos_a_recorded_asteroid(tup.0))
                 .filter(|tup|tup.1 == last_round).collect::<Vec<_>>();
 
-            println!("see_positions_last_round {:?}", see_positions_last_round);
             if see_positions_last_round.len() > 0 {
                 println!("Radar position found last round {:?}", see_positions_last_round[0].0.clone());
                 self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0.clone());
