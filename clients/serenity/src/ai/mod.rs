@@ -4,7 +4,7 @@ use position::Pos;
 use defs;
 use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION, CANNON, HIT };
+use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION, CANNON };
 use lists::*;
 use ai::bot::Bot;
 use log::Logger;
@@ -84,71 +84,53 @@ impl Ai {
     }
 
     fn is_pos_in_cannon_actions(&self, pos: Pos, cannon_positions: &Vec<Pos>) -> bool {
-        if cannon_positions.iter().filter(|cp| cp.distance(pos) <= 1).count() > 0 {
-            true
-        } else {
-            false
-        }
+        cannon_positions.iter().find(
+            |cp| cp.distance(pos) <= self.config.cannon
+            ).is_some()
     }
 
-    // So the logic here is:
-    // If the supplied position is within 1 distance of any cannon action
-    // AND there is no hit event at that position we have an asteroid and return true
-    // Otherwise return false
+    // Logic:
+    // If pos is within shoot radius of any cannon action,
+    // AND there is no hit event at that position, we have an asteroid.
+    // Otherwise we can't be sure, so return false.
+    // For this logic to work, we must have shot while radaring. 
+    // Maybe we should ensure this somehow later?
+    // We do not want any false positives here...
     fn is_echo_an_asteroid(&self, pos: Pos, cannon_positions: &Vec<Pos>, hit_events: &Vec<Event>) -> bool {
         // Check if this is already a recorded asteroid to save some work
-        if self.is_pos_a_recorded_asteroid(pos) {
-            return false;
+        if self.is_pos_a_recorded_asteroid(&pos) {
+            return true;
         }
 
         // First we check if the position matches any cannon actions
         // Otherwise we can't draw any conclusions
         if self.is_pos_in_cannon_actions(pos, &cannon_positions) {
             // Next see if we can find a hit event on that position
-            hit_events.iter().cloned().map(|ref event| {
-                if let Some(p) = self.get_pos_from_hit(&event, &self.round_id) {
-                    if p.distance(pos) == 0 {
-                        return false;
-                    }
-                }
-                true
-            }).count();
-            // The position was in cannon actions but didn't match any hits.... ASTEROID!!!
-            return true;
+            return hit_events.iter().find(|ev| 
+                  if let Some(hit_pos) = self.get_pos_from_hit(&ev, &self.round_id) {
+                      return hit_pos == pos;
+                  } else {
+                      return false;
+                  }
+              ).is_none();
+            // If we shot at pos but didn't get a hit event, it's an asteroid. 
         } else {
             // We didn't shoot at it so we have no way of telling if it's an asteroid yet
             return false;
         }
     }
 
-    pub fn is_pos_a_recorded_asteroid(&self, pos: Pos) -> bool {
-        if let Some(_) = self.asteroids
-            .iter()
-            .find(|asteroid_pos| asteroid_pos.distance(pos) == 0)
-        {
-            return true;
-        } else {
-            return false;
-        }
+    pub fn is_pos_a_recorded_asteroid(&self, pos: &Pos) -> bool {
+        self.asteroids.contains(pos)
     }
 
     fn filter_asteroids_from_events(&self, events: &Vec<Event>) -> Vec<Event> {
-        events
-            .iter()
-            .cloned()
-            .filter(|event| {
-                match *event {
-                    Echo(ref ev) => {
-                        if self.asteroids.iter().filter(|pos| pos.distance(ev.pos) == 0).count() > 0 {
-                            false
-                        } else {
-                            true
-                        }
-                    }
-                    _ => true
-                }
-            })
-            .collect::<Vec<_>>()
+        let mut events: Vec<Event> = events.to_vec();
+        events.retain(|event| { match *event {
+            Echo(ref ev) => { !self.is_pos_a_recorded_asteroid(&ev.pos) }
+            _ => true
+        }});
+        return events;
     }
 
     // Purpose: go through events and update our state so it's up to date for decisionmaking later
@@ -158,7 +140,6 @@ impl Ai {
         let last_round_cannon_positions: Vec<Pos> = self.history
             .get_actions_for_round( CANNON, self.round_id - 1 )
             .iter()
-            .cloned()
             .map(|ac|ac.pos)
             .collect();
         let hit_events_this_round = events
@@ -172,16 +153,9 @@ impl Ai {
             })
             .collect::<Vec<_>>();
 
-        let mut neg_probes: Vec<Pos> = Vec::new();
-
         for event in events {
             match *event {
-                Hit(ref ev) => {
-                    // let probe = self.probing.into_iter().find(|&(id, pos)| ev.source == id);
-                    // if let Some((_, pos)) = probe {
-                    //     neg_probes.push(pos);
-                    // }
-                }
+                Hit(_) => { }
                 Die(ref ev) => {
                     let bot_opt = self.get_bot_mut(ev.bot_id);
                     if let Some(bot) = bot_opt {

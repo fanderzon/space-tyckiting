@@ -3,7 +3,6 @@ use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE, MODE_ATTACK, MODE_
 use position::Pos;
 use ai::*;
 use lists::*;
-use ai::bot::Bot;
 
 impl Ai {
     // Will alternate between all bots shooting at the last echo and 1 bot scanning
@@ -89,7 +88,7 @@ impl Ai {
             // Since we got here we know we have no echoes or hits this round,
             // how about last round?
             let see_positions_last_round = see_positions.iter()
-                .filter(|tup|!self.is_pos_a_recorded_asteroid(tup.0))
+                .filter(|tup|!self.is_pos_a_recorded_asteroid(&tup.0))
                 .filter(|tup|tup.1 == last_round).collect::<Vec<_>>();
 
             if see_positions_last_round.len() > 0 {
@@ -126,7 +125,7 @@ impl Ai {
     // Will just attack a position with all we've got
     // Typical use: We have a fresh echo or hit (from this round)
     #[allow(dead_code)]
-    pub fn attack_pos(&mut self, mut actions: &mut Vec<Action>, target: Pos) {
+    pub fn attack_pos(&mut self, actions: &mut Vec<Action>, target: Pos) {
         let radius = self.config.field_radius;
         let available_bots = self.get_live_bots();
         let bots_alive = available_bots.len() as i16;
@@ -139,7 +138,7 @@ impl Ai {
 
     // Will attack a position, but also make sure we scan it to not lose track of the target
     // Typical use: We have a 1 round old echo or hit
-    pub fn attack_and_scan_pos(&mut self, mut actions: &mut Vec<Action>, target: Pos) {
+    pub fn attack_and_scan_pos(&mut self, actions: &mut Vec<Action>, target: Pos) {
         println!("attack_and_scan_pos: avilable bots {:?}", self.get_live_bots());
         // Let's first get available bots, I'm going to filter out bots on the move
         // but this is optional depending on how aggressive we want to be
@@ -147,11 +146,7 @@ impl Ai {
             .iter()
             .cloned()
             .filter(|bot| {
-                if Some(actions.get_action(bot.id)).unwrap().unwrap().action_type != MOVE.to_string() {
-                    true
-                } else {
-                    false
-                }
+                actions.get_action(bot.id).unwrap().action_type != MOVE.to_string()
             })
             .collect::<Vec<_>>();
 
@@ -195,10 +190,10 @@ impl Ai {
                 match tup.0 {
                     Event::See(ref ev) => (ev.pos.clone(), tup.1),
                     Event::Echo(ref ev) => (ev.pos.clone(), tup.1),
-                    _ => (Pos::default(), 0)
+                    _ => (Pos::origo(), 0)
                 }
             })
-            .filter(|&(ref pos, ref round_id)| pos.distance(target) <= max_radius)
+            .filter(|&(ref pos, _)| pos.distance(target) <= max_radius)
             .fold(None, |acc, curr| {
                 if let Some(a) = acc {
                     if curr.1 >= a.1 { Some(curr) } else { Some(a) }
@@ -209,6 +204,7 @@ impl Ai {
     }
 
     // Returns the number of bots that are alive and not evading
+    #[allow(dead_code)]
     pub fn bots_available_for_attack(&self, actions: &Vec<Action>) -> usize {
         self.bots
             .iter()

@@ -10,7 +10,7 @@ impl Pos {
         return Pos {x: x, y: y};
     }
 
-    pub fn default() -> Pos {
+    pub fn origo() -> Pos {
         return Pos {x: 0, y: 0};
     }
 
