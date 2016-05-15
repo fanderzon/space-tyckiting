@@ -229,7 +229,7 @@ impl HistoryList for Vec<HistoryEntry> {
                 match tup.0 {
                     Event::See(ref ev) => (ev.pos.clone(), tup.1),
                     Event::Echo(ref ev) => (ev.pos.clone(), tup.1),
-                    _ => (Pos::default(), 0)
+                    _ => (Pos::origo(), 0)
                 }
             })
             .collect()

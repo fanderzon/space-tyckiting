@@ -3,7 +3,6 @@ use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE, MODE_ATTACK, MODE_
 use position::Pos;
 use ai::*;
 use lists::*;
-use ai::bot::Bot;
 
 impl Ai {
     // Will alternate between all bots shooting at the last echo and 1 bot scanning
@@ -29,7 +28,7 @@ impl Ai {
         let see_positions = self.history.get_echo_positions(5);
 
         // Don't continue to attack if we killed something
-        // TODO: Look hit events with this bot_id, then get the pos of that hit id
+        // TODO: Look at hit events with this bot_id, then get the pos of that hit id
         // and check if we have other radar echoes to pursue
         if let Some(ev) = self.get_possible_die_event() {
             println!("We killed something, back to scanning: {:?}", ev);
@@ -39,9 +38,18 @@ impl Ai {
         // Are there any echoes this round? shoot at them...
         let see_positions_this_round = see_positions.iter()
             .filter(|tup|tup.1 == self.round_id).collect::<Vec<_>>();
+        println!("See positions this round {:?}", see_positions_this_round);
         if see_positions_this_round.len() > 0 {
             println!("Radar position found this round {:?}", see_positions_this_round[0].0.clone());
-            self.attack_pos(&mut actions, see_positions_this_round[0].0.clone());
+
+            // Because of asteroids we want to make sure that the first time we see something
+            // We scan as we shoot so we can mark detect asteroids
+            if last_mode == MODE_SCAN.to_string() {
+                self.attack_and_scan_pos(&mut actions, see_positions_this_round[0].0.clone());
+            } else {
+                self.attack_pos(&mut actions, see_positions_this_round[0].0.clone());
+            }
+
             self.log_attack_actions(&actions, "have fresh seen data");
             return true;
         }
@@ -76,11 +84,13 @@ impl Ai {
         // of something to shoot at, this is where we look if we are in attack mode
         // but just had some bad luck last round
         if last_mode == MODE_ATTACK.to_string() {
-            println!("We were attacking last round, let's continue with that");
+            println!("We were attacking last round, let's continue with that if we can");
             // Since we got here we know we have no echoes or hits this round,
             // how about last round?
             let see_positions_last_round = see_positions.iter()
+                .filter(|tup|!self.is_pos_a_recorded_asteroid(&tup.0))
                 .filter(|tup|tup.1 == last_round).collect::<Vec<_>>();
+
             if see_positions_last_round.len() > 0 {
                 println!("Radar position found last round {:?}", see_positions_last_round[0].0.clone());
                 self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0.clone());
@@ -114,29 +124,29 @@ impl Ai {
 
     // Will just attack a position with all we've got
     // Typical use: We have a fresh echo or hit (from this round)
-    pub fn attack_pos(&mut self, mut actions: &mut Vec<Action>, target: Pos) {
+    #[allow(dead_code)]
+    pub fn attack_pos(&mut self, actions: &mut Vec<Action>, target: Pos) {
         let radius = self.config.field_radius;
-        let bots_alive = self.bots_alive() as i16;
-        self.bots.iter_mut()
+        let available_bots = self.get_live_bots();
+        let bots_alive = available_bots.len() as i16;
+
+        available_bots.iter()
             .zip(target.smart_attack_spread(bots_alive))
-            .map(|(&mut ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
+            .map(|(&ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
             .count();
     }
 
     // Will attack a position, but also make sure we scan it to not lose track of the target
     // Typical use: We have a 1 round old echo or hit
-    pub fn attack_and_scan_pos(&mut self, mut actions: &mut Vec<Action>, target: Pos) {
+    pub fn attack_and_scan_pos(&mut self, actions: &mut Vec<Action>, target: Pos) {
+        println!("attack_and_scan_pos: avilable bots {:?}", self.get_live_bots());
         // Let's first get available bots, I'm going to filter out bots on the move
         // but this is optional depending on how aggressive we want to be
         let available_bots = self.get_live_bots()
             .iter()
             .cloned()
             .filter(|bot| {
-                if Some(actions.get_action(bot.id)).unwrap().unwrap().action_type != MOVE.to_string() {
-                    true
-                } else {
-                    false
-                }
+                actions.get_action(bot.id).unwrap().action_type != MOVE.to_string()
             })
             .collect::<Vec<_>>();
 
@@ -180,10 +190,10 @@ impl Ai {
                 match tup.0 {
                     Event::See(ref ev) => (ev.pos.clone(), tup.1),
                     Event::Echo(ref ev) => (ev.pos.clone(), tup.1),
-                    _ => (Pos::default(), 0)
+                    _ => (Pos::origo(), 0)
                 }
             })
-            .filter(|&(ref pos, ref round_id)| pos.distance(target) <= max_radius)
+            .filter(|&(ref pos, _)| pos.distance(target) <= max_radius)
             .fold(None, |acc, curr| {
                 if let Some(a) = acc {
                     if curr.1 >= a.1 { Some(curr) } else { Some(a) }
@@ -194,6 +204,7 @@ impl Ai {
     }
 
     // Returns the number of bots that are alive and not evading
+    #[allow(dead_code)]
     pub fn bots_available_for_attack(&self, actions: &Vec<Action>) -> usize {
         self.bots
             .iter()
@@ -207,9 +218,11 @@ impl Ai {
             .count()
     }
 
-    // See if we need this for anything, with the current logic probably not
-    // Maybe some edge cases with the one bot strategy?
-    fn get_pos_from_hit(&self, hit_event: &Event, round_id: &i16) -> Option<Pos> {
+    // Hit events don't have positions, but they have the source (bot_id) of the bot
+    // that made the shot, so you can go back one round and get that bots cannon action
+    // That means that the position this method returns will not have a 1:1 relationship
+    // with the enemy bot position, but can be anywhere within the cannon radius (1)
+    pub fn get_pos_from_hit(&self, hit_event: &Event, round_id: &i16) -> Option<Pos> {
         let previous_round: i16 = round_id - 1;
         let mut source: i16 = -1;
         match hit_event {
