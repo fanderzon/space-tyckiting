@@ -4,7 +4,7 @@ use position::Pos;
 use defs;
 use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION, CANNON };
+use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION, CANNON, HIT };
 use lists::*;
 use ai::bot::Bot;
 use log::Logger;
@@ -91,6 +91,35 @@ impl Ai {
         }
     }
 
+    // So the logic here is:
+    // If the supplied position is within 1 distance of any cannon action
+    // AND there is no hit event at that position we have an asteroid and return true
+    // Otherwise return false
+    fn is_echo_an_asteroid(&self, pos: Pos, cannon_positions: &Vec<Pos>, hit_events: &Vec<Event>) -> bool {
+        println!("is_echo_an_asteroid {:?}", pos);
+        // First we check if the position matches any cannon actions
+        // Otherwise we can't draw any conclusions
+        if self.is_pos_in_cannon_actions(pos, &cannon_positions) {
+            // Next see if we can find a hit event on that position
+            hit_events.iter().cloned().map(|ref event| {
+                if let Some(p) = self.get_pos_from_hit(&event, &self.round_id) {
+                    println!("Asteroid search got pos from hit {:?} {:?}", event, p);
+                    if p.distance(pos) == 0 {
+                        return false;
+                    }
+                }
+                true
+            }).count();
+
+            // The position was in cannon actions but didn't match any hits.... ASTEROID!!!
+            return true;
+        } else {
+            // We didn't shoot at it so we have no way of telling if it's an asteroid yet
+            return false;
+        }
+    }
+
+
     fn filter_asteroids_from_events(&self, events: &Vec<Event>) -> Vec<Event> {
         events
             .iter()
@@ -120,6 +149,7 @@ impl Ai {
             .cloned()
             .map(|ac|ac.pos)
             .collect();
+        let hit_events_this_round = self.history.get_events_for_round( HIT, self.round_id );
 
         let mut neg_probes: Vec<Pos> = Vec::new();
 
@@ -142,17 +172,15 @@ impl Ai {
                 }
                 See(ref ev) => {
                     log.push((format!("See enemy on {:?}", ev.pos), 2));
-                    // Is it an asteroid?
-                    if self.is_pos_in_cannon_actions(ev.pos, &last_round_cannon_positions) {
-                        log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
-                        self.asteroids.push(ev.pos);
-                    }
                 }
                 Echo(ref ev) => {
                     log.push((format!("RadarEcho enemy/asteroid on {}", ev.pos), 2));
-                    if self.is_pos_in_cannon_actions(ev.pos, &last_round_cannon_positions) {
+                    if self.is_echo_an_asteroid(ev.pos, &last_round_cannon_positions, &hit_events_this_round) {
+                        println!("Echo {:?} is an asteroid", ev.pos);
                         log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
                         self.asteroids.push(ev.pos);
+                    } else {
+                        println!("Echo {:?} is not an asteroid", ev.pos);
                     }
                 }
                 Damaged(ref ev) => {

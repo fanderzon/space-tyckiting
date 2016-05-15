@@ -222,9 +222,11 @@ impl Ai {
             .count()
     }
 
-    // See if we need this for anything, with the current logic probably not
-    // Maybe some edge cases with the one bot strategy?
-    fn get_pos_from_hit(&self, hit_event: &Event, round_id: &i16) -> Option<Pos> {
+    // Hit events don't have positions, but they have the source (bot_id) of the bot
+    // that made the shot, so you can go back one round and get that bots cannon action
+    // That means that the position this method returns will not have a 1:1 relationship
+    // with the enemy bot position, but can be anywhere within the cannon radius (1)
+    pub fn get_pos_from_hit(&self, hit_event: &Event, round_id: &i16) -> Option<Pos> {
         let previous_round: i16 = round_id - 1;
         let mut source: i16 = -1;
         match hit_event {
