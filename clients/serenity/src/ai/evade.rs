@@ -27,8 +27,8 @@ impl Ai {
 
     pub fn evade_if_needed(&mut self, actions: &mut Vec<Action>) {
         // Let's evade if we were seen in the last two turns
-        let mut evade_events = self.history.get_events( DETECTED, 2 );
-        evade_events.append(&mut self.history.get_events( DAMAGED, 2 ));
+        let mut evade_events = self.history.get_events( DETECTED, 1 );
+        evade_events.append(&mut self.history.get_events( DAMAGED, 1 ));
 
         for ev in evade_events {
             match ev.0 {

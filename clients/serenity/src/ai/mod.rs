@@ -4,7 +4,7 @@ use position::Pos;
 use defs;
 use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION, };
+use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION };
 use lists::*;
 use ai::bot::Bot;
 use log::Logger;
@@ -42,14 +42,15 @@ impl Ai {
         self.evade_if_needed(&mut actions);
 
         // Attack if we have a target, evading bots will continue evading
-        let attacking: bool = self.attack_and_scan_if_target(&mut actions);
+        let attacking: bool = self.aggressive_attack_strategy(&mut actions);
 
         // If not attacking, use non evading bots to scan in a sequence
         if attacking {
-            mode = MODE_ATTACK.to_string()
+            mode = MODE_ATTACK.to_string();
         } else {
             self.scan_with_idle_bots(&mut actions);
         }
+        self.logger.log(&format!("Mode: {}", mode), 2);
 
         println!("Action are {:?}", actions);
         // Filter out NOACTIONs before sending to server
@@ -74,15 +75,6 @@ impl Ai {
         };
     }
 
-    fn bots_alive(&self) -> usize {
-        self.bots.iter().filter(|bot| bot.alive ).count()
-    }
-    fn is_our_bot(&self, bot_id: i16) -> bool {
-        match self.get_bot(bot_id) {
-            Some(_) => return true,
-            _ => return false
-        }
-    }
 
     // TODO: This does not actually need to be mutable
     fn make_actions_message(&self, mut actions: Vec<Action>) -> ActionsMessage {
@@ -154,8 +146,9 @@ impl Ai {
 
         // Get mode and actions for the round and add those to history too
         let (mode,actions) = self.make_decisions();
-        self.history.set_mode(&mode);
+
         self.history.add_actions(&self.round_id, &actions);
+        self.history.set_mode(&self.round_id, &mode);
 
         self.logger.log(&actions.render(), 2);
         return self.make_actions_message(actions);
@@ -168,10 +161,23 @@ impl Ai {
     fn get_bot_mut(&mut self, id: i16) -> Option<&mut Bot> {
         return self.bots.iter_mut().find(|bot|bot.id == id);
     }
+
+    fn bots_alive(&self) -> usize {
+        self.bots.iter().filter(|bot| bot.alive ).count()
+    }
+
+    pub fn get_live_bots(&self) -> Vec<Bot> {
+        self.bots.iter().filter(|bot| bot.alive ).cloned().collect::<Vec<_>>()
+    }
+
+    pub fn is_our_bot(&self, bot_id: i16) -> bool {
+        match self.get_bot(bot_id) {
+            Some(_) => true,
+            None => false,
+        }
+    }
 }
 
 fn gen_bots(start: &defs::Start) -> Vec<Bot> {
     return start.you.bots.iter().map(Bot::new).collect();
 }
-
-

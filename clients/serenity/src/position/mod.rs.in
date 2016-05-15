@@ -10,6 +10,10 @@ impl Pos {
         return Pos {x: x, y: y};
     }
 
+    pub fn default() -> Pos {
+        return Pos {x: 0, y: 0};
+    }
+
     #[allow(dead_code)]
     pub fn distance(self, other: Pos) -> i16 {
         let dx: i16 = self.x - other.x;
