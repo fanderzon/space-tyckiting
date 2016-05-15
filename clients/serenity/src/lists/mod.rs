@@ -1,3 +1,4 @@
+use std::fmt;
 use defs:: { Action, Event, get_event_name };
 use defs::Event::*;
 use position::Pos;
@@ -77,8 +78,8 @@ pub trait HistoryList {
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)>;
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action>;
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action>;
-    fn set_mode(&mut self, round_id: &i16, mode: &str);
-    fn get_mode(&self, round_id: &i16) -> String;
+    fn set_mode(&mut self, round_id: &i16, mode: ActionMode);
+    fn get_mode(&self, round_id: &i16) -> ActionMode;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
@@ -93,7 +94,7 @@ impl HistoryList for Vec<HistoryEntry> {
                     round_id: *round_id,
                     events: filtered_events,
                     actions: Vec::new(),
-                    mode: NOACTION.to_string(),
+                    mode: ActionMode::Nomode,
                 });
             }
         }
@@ -114,7 +115,7 @@ impl HistoryList for Vec<HistoryEntry> {
                     round_id: *round_id,
                     events: Vec::new(),
                     actions: a,
-                    mode: NOACTION.to_string(),
+                    mode: ActionMode::Nomode,
                 });
             }
         }
@@ -284,17 +285,16 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     #[allow(dead_code)]
-    fn set_mode(&mut self, round_id: &i16, mode: &str) {
-
+    fn set_mode(&mut self, round_id: &i16, mode: ActionMode) {
         match self.get_mut(&round_id) {
-            Some(history_entry) => history_entry.mode = mode.to_string(),
+            Some(history_entry) => history_entry.mode = mode,
             None => ()
         }
     }
 
     #[allow(dead_code)]
-    fn get_mode(&self, round_id: &i16) -> String {
-        self[*round_id as usize].mode.to_string()
+    fn get_mode(&self, round_id: &i16) -> ActionMode {
+        self[*round_id as usize].mode.clone()
     }
 }
 
@@ -303,5 +303,24 @@ pub struct HistoryEntry {
     pub round_id: i16,
     pub events: Vec<Event>,
     pub actions: Vec<Action>,
-    pub mode: String,
+    pub mode: ActionMode,
 }
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum ActionMode {
+    Attack,
+    Scan,
+    Nomode,
+}
+
+impl fmt::Display for ActionMode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let as_str = match self {
+            &ActionMode::Attack => "ATTACK",
+            &ActionMode::Scan => "SCAN",
+            &ActionMode::Nomode => "NOMODE",
+        };
+        write!(f, "{}", as_str)
+    }
+}
+

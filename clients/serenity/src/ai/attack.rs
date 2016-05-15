@@ -1,8 +1,9 @@
 use defs::{ Action, Event, DieEvent };
-use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE, MODE_ATTACK, MODE_SCAN, NOACTION };
+use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE };
 use position::Pos;
 use ai::*;
 use lists::*;
+use lists::ActionMode::*;
 
 impl Ai {
     // Will alternate between all bots shooting at the last echo and 1 bot scanning
@@ -15,10 +16,10 @@ impl Ai {
             let round_entry = self.history.get(&last_round);
             match round_entry {
                 Some(entry) => {
-                    last_mode = entry.mode.clone();
+                    last_mode = entry.mode;
                 },
                 None => {
-                    last_mode = NOACTION.to_string();
+                    last_mode = Nomode;
                 }
             }
         }
@@ -40,14 +41,14 @@ impl Ai {
             .filter(|tup|tup.1 == self.round_id).collect::<Vec<_>>();
         println!("See positions this round {:?}", see_positions_this_round);
         if see_positions_this_round.len() > 0 {
-            println!("Radar position found this round {:?}", see_positions_this_round[0].0.clone());
+            println!("Radar position found this round {:?}", see_positions_this_round[0].0);
 
             // Because of asteroids we want to make sure that the first time we see something
             // We scan as we shoot so we can mark detect asteroids
-            if last_mode == MODE_SCAN.to_string() {
-                self.attack_and_scan_pos(&mut actions, see_positions_this_round[0].0.clone());
+            if last_mode == Scan {
+                self.attack_and_scan_pos(&mut actions, see_positions_this_round[0].0);
             } else {
-                self.attack_pos(&mut actions, see_positions_this_round[0].0.clone());
+                self.attack_pos(&mut actions, see_positions_this_round[0].0);
             }
 
             self.log_attack_actions(&actions, "have fresh seen data");
@@ -74,7 +75,7 @@ impl Ai {
         if hit_events_this_round.len() > 0 {
             if let Some(pos) = self.get_pos_from_hit(&hit_events_this_round[0].0, &self.round_id) {
                 println!("Found pos of last hit, attacking {:?}", pos);
-                self.attack_pos(&mut actions, pos.clone());
+                self.attack_pos(&mut actions, pos);
                 self.log_attack_actions(&actions, "have fresh hit data");
                 return true;
             }
@@ -83,7 +84,7 @@ impl Ai {
         // So far we have not really used the mode field because we've had fresh data
         // of something to shoot at, this is where we look if we are in attack mode
         // but just had some bad luck last round
-        if last_mode == MODE_ATTACK.to_string() {
+        if last_mode == Attack {
             println!("We were attacking last round, let's continue with that if we can");
             // Since we got here we know we have no echoes or hits this round,
             // how about last round?
@@ -92,8 +93,8 @@ impl Ai {
                 .filter(|tup|tup.1 == last_round).collect::<Vec<_>>();
 
             if see_positions_last_round.len() > 0 {
-                println!("Radar position found last round {:?}", see_positions_last_round[0].0.clone());
-                self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0.clone());
+                println!("Radar position found last round {:?}", see_positions_last_round[0].0);
+                self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0);
                 self.log_attack_actions(&actions, "have one round old seen data");
                 return true;
             }
@@ -105,7 +106,7 @@ impl Ai {
                 println!("Found hit event last round {:?}", hit_events_last_round[0]);
                 if let Some(pos) = self.get_pos_from_hit(&hit_events_last_round[0].0, &last_round) {
                     println!("Pos of last round hit {:?}", pos);
-                    self.attack_and_scan_pos(&mut actions, pos.clone());
+                    self.attack_and_scan_pos(&mut actions, pos);
                     self.log_attack_actions(&actions, "have one round old hit data");
                     return true;
                 }
@@ -188,8 +189,8 @@ impl Ai {
             .cloned()
             .map(|tup| {
                 match tup.0 {
-                    Event::See(ref ev) => (ev.pos.clone(), tup.1),
-                    Event::Echo(ref ev) => (ev.pos.clone(), tup.1),
+                    Event::See(ref ev) => (ev.pos, tup.1),
+                    Event::Echo(ref ev) => (ev.pos, tup.1),
                     _ => (Pos::origo(), 0)
                 }
             })

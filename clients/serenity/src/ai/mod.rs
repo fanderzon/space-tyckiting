@@ -4,8 +4,9 @@ use position::Pos;
 use defs;
 use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
 use defs::Event::*;
-use strings::{ ACTIONS, MODE_SCAN, MODE_ATTACK, NOACTION, CANNON };
+use strings::{ ACTIONS, NOACTION, CANNON };
 use lists::*;
+use lists::ActionMode::*;
 use ai::bot::Bot;
 use log::Logger;
 
@@ -26,12 +27,12 @@ pub struct Ai {
 }
 
 impl Ai {
-    fn make_decisions(&mut self) -> (String, Vec<Action>) {
+    fn make_decisions(&mut self) -> (ActionMode, Vec<Action>) {
         let mut actions: Vec<Action> = Vec::populate(&self.bots); // NOACTIONS for every live bot
 
         // Set default mode, mode's are MODE_ATTACK or MODE_SCAN
         // evading is considered something that is up to each bot regardless of mode
-        let mut mode = MODE_SCAN.to_string();
+        let mut mode = Scan;
 
         self.logger.log("Decisions", 1);
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
@@ -44,7 +45,7 @@ impl Ai {
 
         // If not attacking, use non evading bots to scan in a sequence
         if attacking {
-            mode = MODE_ATTACK.to_string();
+            mode = Attack;
         } else {
             self.scan_with_idle_bots(&mut actions);
         }
@@ -184,7 +185,7 @@ impl Ai {
                 }
                 Move(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
-                    let oldpos = bot.pos.clone();
+                    let oldpos = bot.pos;
                     bot.pos = ev.pos;
                     log.push((format!("Move own bot {} from {} to {}", bot.id, oldpos, bot.pos), 2));
                 }
@@ -218,7 +219,7 @@ impl Ai {
         let (mode,actions) = self.make_decisions();
 
         self.history.add_actions(&self.round_id, &actions);
-        self.history.set_mode(&self.round_id, &mode);
+        self.history.set_mode(&self.round_id, mode);
 
         self.logger.log(&actions.render(), 2);
         return self.make_actions_message(actions);

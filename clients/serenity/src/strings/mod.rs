@@ -22,5 +22,3 @@ pub const INVALID: &'static str = "invalid";
 
 pub const ALL: &'static str = "all";
 
-pub const MODE_ATTACK: &'static str = "mode_attack";
-pub const MODE_SCAN: &'static str = "mode_scan";
