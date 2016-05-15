@@ -107,13 +107,11 @@ impl Ai {
         // Otherwise we can't draw any conclusions
         if self.is_pos_in_cannon_actions(pos, &cannon_positions) {
             // Next see if we can find a hit event on that position
-            return hit_events.iter().find(|ev| 
-                  if let Some(hit_pos) = self.get_pos_from_hit(&ev, &self.round_id) {
-                      return hit_pos == pos;
-                  } else {
-                      return false;
-                  }
-              ).is_none();
+            return hit_events
+                .iter()
+                .filter_map(|ev| self.get_pos_from_hit(&ev, self.round_id))
+                .find(|hit_pos| hit_pos == pos)
+                .is_none();
             // If we shot at pos but didn't get a hit event, it's an asteroid. 
         } else {
             // We didn't shoot at it so we have no way of telling if it's an asteroid yet
