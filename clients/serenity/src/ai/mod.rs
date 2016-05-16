@@ -110,7 +110,7 @@ impl Ai {
             return hit_events
                 .iter()
                 .filter_map(|ev| self.get_pos_from_hit(&ev, self.round_id))
-                .find(|hit_pos| hit_pos == pos)
+                .find(|hit_pos| *hit_pos == pos)
                 .is_none();
             // If we shot at pos but didn't get a hit event, it's an asteroid. 
         } else {

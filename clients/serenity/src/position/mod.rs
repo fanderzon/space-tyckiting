@@ -22,13 +22,15 @@ impl Pos {
             // If 4, shoot smart with 3 of them and randomly with the 4th
             4 => {
                 shoot_at = self.triangle_smart();
-                shoot_at.push(self.random_spread());
+                shoot_at.push(*self);
             },
             3 => shoot_at = self.triangle_smart(),
-            1|2 => {
-                for _ in 0..available_bots {
-                    shoot_at.push(self.random_spread());
-                }
+            2 => {
+                //TODO: Choose twin based on pos in map.
+                shoot_at = self.rand_twin();
+            }
+            1 => {
+                shoot_at.push(self.random_spread());
             },
             _ => ()
         }
@@ -70,10 +72,39 @@ impl Pos {
                      Pos::new(x-1, y+1),
                      Pos::new(x,   y-1) ];
     }
+
+    pub fn rand_twin(&self) -> Vec<Pos> {
+        let ori = match rand::thread_rng().gen_range(0, 3) {
+            0 => Orientation::Horizontal,
+            1 => Orientation::Slash,
+            _ => Orientation::Backslash,
+        };
+        return self.twin(ori);
+    }
+
+    pub fn twin(&self, orientation: Orientation) -> Vec<Pos> {
+        let x = self.x;
+        let y = self.y;
+        return match orientation {
+            Orientation::Horizontal => vec![ Pos::new(x+1, y  ),
+                                             Pos::new(x-1, y  ) ],
+            Orientation::Slash      => vec![ Pos::new(x+1, y-1),
+                                             Pos::new(x-1, y+1) ],
+            Orientation::Backslash  => vec![ Pos::new(x,   y-1),
+                                             Pos::new(x,   y+1) ],
+        };
+    }
 }
 
 impl fmt::Display for Pos {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum Orientation {
+    Horizontal,
+    Slash,
+    Backslash,
 }
