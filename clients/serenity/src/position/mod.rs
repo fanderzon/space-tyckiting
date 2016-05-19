@@ -19,7 +19,6 @@ impl Pos {
         let mut shoot_at: Vec<Pos> = Vec::new();
 
         match available_bots {
-            // If 4, shoot smart with 3 of them and randomly with the 4th
             4 => {
                 shoot_at = self.triangle_smart();
                 shoot_at.push(*self);
@@ -38,15 +37,13 @@ impl Pos {
     }
 
     pub fn triangle_smart(&self) -> Vec<Pos> {
-        let mut triangle = match rand::thread_rng().gen_range(0, 2) {
-            0 => { self.triangle_left() }
-            _ => { self.triangle_right() }
-        };
+        let mut triangle = self.triangle_rand_tight();
+
         // Shuffle so that the same will not be middled every time
         let mut rng = rand::thread_rng();
         rng.shuffle(&mut triangle[..]);
         {
-            let p: &mut Pos = triangle.first_mut().expect("There whould be three points here!");
+            let p: &mut Pos = triangle.first_mut().expect("There should be three points here!");
             p.x = self.x;
             p.y = self.y;
         }
@@ -55,8 +52,15 @@ impl Pos {
         return triangle;
     }
 
+    pub fn triangle_rand_tight(&self) -> Vec<Pos> {
+        match rand::thread_rng().gen_range(0, 2) {
+            0 => { self.triangle_left() }
+            _ => { self.triangle_right() }
+        }
+    }
+
     // TODO: Generalize for shot radius
-    fn triangle_left(&self) -> Vec<Pos> {
+    pub fn triangle_left(&self) -> Vec<Pos> {
         let x = self.x;
         let y = self.y;
         return vec![ Pos::new(x-1, y  ),
