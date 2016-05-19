@@ -1,6 +1,7 @@
 use defs::{ Action, Event, DieEvent };
 use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE };
 use position::Pos;
+use patterns::*;
 use ai::*;
 use lists::*;
 use lists::ActionMode::*;
@@ -132,7 +133,7 @@ impl Ai {
         let bots_alive = available_bots.len() as i16;
 
         available_bots.iter()
-            .zip(target.smart_attack_spread(bots_alive))
+            .zip(smart_attack_spread(target, bots_alive))
             .map(|(&ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
             .count();
     }
@@ -156,7 +157,7 @@ impl Ai {
         // and the following will be attack positions
         let available_bot_count = available_bots.len();
         let mut positions: Vec<Pos> = vec![target];
-        positions.append(&mut target.smart_attack_spread(available_bot_count as i16));
+        positions.append(&mut smart_attack_spread(target, available_bot_count as i16));
         let mut radared = false;
 
         println!("Attacking or scanning with {:?} bots, to: {:?}", available_bot_count, positions);

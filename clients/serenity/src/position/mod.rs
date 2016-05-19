@@ -4,99 +4,121 @@ extern crate serde_json;
 use std::cmp;
 use std::ops::Add;
 use util;
-use rand;
-use rand::Rng;
 use std::fmt;
 
 include!(concat!(env!("OUT_DIR"), "/position.rs"));
 
 impl Pos {
-    // Abstraction for the attacking methods to use
-    // They pass in the number of available bots and this method will use the
-    // right spread strategy for that number and return a vector
-    // TODO: Implement actual smart shooting
-    pub fn smart_attack_spread(&self, available_bots: i16) -> Vec<Pos> {
-        let mut shoot_at: Vec<Pos> = Vec::new();
+    #[allow(dead_code)]
+    pub fn new(x: i16, y: i16) -> Pos {
+        return Pos {x: x, y: y};
+    }
 
-        match available_bots {
-            4 => {
-                shoot_at = self.triangle_smart();
-                shoot_at.push(*self);
-            },
-            3 => shoot_at = self.triangle_smart(),
-            2 => {
-                //TODO: Choose twin based on pos in map.
-                shoot_at = self.rand_twin();
+    pub fn origo() -> Pos {
+        return Pos {x: 0, y: 0};
+    }
+
+    pub fn distance(self, other: Pos) -> i16 {
+        let dx: i16 = self.x - other.x;
+        let dy: i16 = self.y - other.y;
+        let dz: i16 = self.x + self.y - other.x - other.y;
+
+        // cmp::max only takes 2 args
+        cmp::max( cmp::max(dx.abs(), dy.abs()), dz.abs())
+    }
+
+    pub fn random_spread(&self) -> Pos {
+        Pos {
+            x: self.x + util::get_rand_range(-1, 1),
+            y: self.y + util::get_rand_range(-1, 1)
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn neighbors(&self, radius: &i16) -> Vec<Pos> {
+        let mut result: Vec<Pos> = Vec::new();
+        let x_min = self.x - radius;
+        let x_max = self.x + radius;
+        let y_min = self.y - radius;
+        let y_max = self.y + radius;
+
+        for x in x_min..x_max {
+            for y in y_min..y_max {
+                let new_pos = Pos { x: x, y: y };
+                if self.distance(new_pos) <= *radius && *self != new_pos {
+                    result.push(new_pos);
+                }
             }
-            1 => {
-                shoot_at.push(self.random_spread());
-            },
-            _ => ()
         }
-        shoot_at
+
+        result.retain(Pos::in_map);
+        return result;
     }
 
-    pub fn triangle_smart(&self) -> Vec<Pos> {
-        let mut triangle = self.triangle_rand_tight();
+    //TODO: This is bad. Magic numbers are bad. Come up with something.
+    pub fn in_map(&self) -> bool {
+        return self.distance(Pos::new(0, 0)) <= 14;
+    }
 
-        // Shuffle so that the same will not be middled every time
-        let mut rng = rand::thread_rng();
-        rng.shuffle(&mut triangle[..]);
-        {
-            let p: &mut Pos = triangle.first_mut().expect("There should be three points here!");
-            p.x = self.x;
-            p.y = self.y;
+    #[allow(dead_code)]
+    pub fn clamped_neighbors(&self, radius: &i16, field_radius: &i16) -> Vec<Pos> {
+        let center = Pos { x: 0, y: 0 };
+        self.neighbors(radius)
+            .iter()
+            .cloned()
+            .filter(|pos| pos.distance(center) <= *field_radius)
+            .collect()
+    }
+
+    #[allow(dead_code)]
+    pub fn clamp(&self, field_radius: &i16) -> Pos {
+        let center = Pos { x:0,y:0 };
+        let d = self.distance(center);
+        let radius = *field_radius;
+
+        // When in radius, we don't have to change anything
+        if d != 0 && d > radius {
+            // We clip the position to nearest in radius
+            let t = 1.0 * radius as f32 / d as f32;
+
+            let cx = self.x as f32 * t;
+            let cy = (-self.x - self.y) as f32 * t;
+            let cz = self.y as f32 * t;
+
+            // We need to round the floating point location to nearest hex
+            return self.round_cube_to_nearest_hex( cx, cy, cz);
         }
-        // Shuffle so that the same bot will not get the middled pos every time
-        rng.shuffle(&mut triangle[..]);
-        return triangle;
+
+        return self.clone();
     }
 
-    pub fn triangle_rand_tight(&self) -> Vec<Pos> {
-        match rand::thread_rng().gen_range(0, 2) {
-            0 => { self.triangle_left() }
-            _ => { self.triangle_right() }
+    #[allow(dead_code)]
+    fn round_cube_to_nearest_hex( &self, x: f32, y: f32, z: f32 ) -> Pos {
+        // Simply rounding would work in most of the cases.
+        // The extra logic is there to handle few special cases,
+        // where a position would round to wrong hex and possibly out of area.
+        // The logic is explained here:
+        // http://www.redblobgames.com/grids/hexagons/#rounding
+
+        let mut rx = x.round() as i16;
+        let ry = y.round() as i16;
+        let mut rz = z.round() as i16;
+
+        let x_diff: f32 = {rx as f32 - x}.abs();
+        let y_diff: f32 = {ry as f32 - y}.abs();
+        let z_diff: f32 = {rz as f32 - z}.abs();
+
+        if x_diff > y_diff && x_diff > z_diff {
+            rx = -ry - rz;
+        } else if y_diff > z_diff {
+            // Do nothing apparently? ry = -rx - rz;
+        } else {
+            rz = -rx - ry;
         }
-    }
-
-    // TODO: Generalize for shot radius
-    pub fn triangle_left(&self) -> Vec<Pos> {
-        let x = self.x;
-        let y = self.y;
-        return vec![ Pos::new(x-1, y  ),
-                     Pos::new(x+1, y-1),
-                     Pos::new(x,   y+1) ];
-    }
-
-    // TODO: Generalize for shot radius
-    pub fn triangle_right(&self) -> Vec<Pos> {
-        let x = self.x;
-        let y = self.y;
-        return vec![ Pos::new(x+1, y  ),
-                     Pos::new(x-1, y+1),
-                     Pos::new(x,   y-1) ];
-    }
-
-    pub fn rand_twin(&self) -> Vec<Pos> {
-        let ori = match rand::thread_rng().gen_range(0, 3) {
-            0 => Orientation::Horizontal,
-            1 => Orientation::Slash,
-            _ => Orientation::Backslash,
-        };
-        return self.twin(ori);
-    }
-
-    pub fn twin(&self, orientation: Orientation) -> Vec<Pos> {
-        let x = self.x;
-        let y = self.y;
-        return match orientation {
-            Orientation::Horizontal => vec![ Pos::new(x+1, y  ),
-                                             Pos::new(x-1, y  ) ],
-            Orientation::Slash      => vec![ Pos::new(x+1, y-1),
-                                             Pos::new(x-1, y+1) ],
-            Orientation::Backslash  => vec![ Pos::new(x,   y-1),
-                                             Pos::new(x,   y+1) ],
-        };
+        Pos {
+            x: rx as i16,
+            y: rz as i16
+        }
     }
 }
 
@@ -104,11 +126,4 @@ impl fmt::Display for Pos {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum Orientation {
-    Horizontal,
-    Slash,
-    Backslash,
 }

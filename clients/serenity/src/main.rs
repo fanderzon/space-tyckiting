@@ -8,6 +8,7 @@ mod defs;
 mod util;
 mod ai;
 mod position;
+mod patterns;
 mod lists;
 mod log;
 
