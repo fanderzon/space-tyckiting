@@ -51,13 +51,7 @@ impl Pos {
             }
         }
 
-        result.retain(Pos::in_map);
         return result;
-    }
-
-    //TODO: This is bad. Magic numbers are bad. Come up with something.
-    pub fn in_map(&self) -> bool {
-        return self.distance(Pos::new(0, 0)) <= 14;
     }
 
     #[allow(dead_code)]
