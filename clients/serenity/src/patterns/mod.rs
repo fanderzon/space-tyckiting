@@ -1,6 +1,7 @@
 use position::Pos;
 use rand;
 use rand::Rng;
+use std::fmt;
 
 // Abstraction for the attacking methods to use
 // They pass in the number of available bots and this method will use the
@@ -16,7 +17,8 @@ pub fn smart_attack_spread(pos: Pos, available_bots: i16) -> Vec<Pos> {
         3 => shoot_at = triangle_smart(pos),
         2 => {
             //TODO: Choose twin based on pos in map.
-            shoot_at = rand_twin(pos);
+            let or: Orientation = *wall_orientation(pos).first().expect("Wall_or... should always return at least one value");
+            shoot_at = twin(pos, or);
         }
         1 => {
             shoot_at.push(pos.random_spread());
@@ -25,7 +27,6 @@ pub fn smart_attack_spread(pos: Pos, available_bots: i16) -> Vec<Pos> {
     }
     shoot_at
 }
-
 
 pub fn triangle_smart(pos: Pos) -> Vec<Pos> {
     let mut triangle = triangle_rand_tight(pos);
@@ -90,6 +91,42 @@ pub fn twin(pos: Pos, orientation: Orientation) -> Vec<Pos> {
     };
 }
 
+
+pub fn wall_orientation(pos: Pos) -> Vec<Orientation> {
+    use self::Orientation::*;
+
+    if pos == Pos::origo() {
+        return vec![Horizontal, Slash, Backslash];
+    }
+    if pos.y == 0 {
+        return vec![Slash, Backslash];
+    }
+    if pos.x == 0 {
+        return vec![Horizontal, Slash];
+    }
+    if pos.x == -pos.y {
+        return vec![Horizontal, Backslash];
+    }
+
+    if pos.y > 0 {
+        if pos.x > 0 {
+            return vec![Slash];
+        } else if -pos.x > pos.y {
+            return vec![Backslash];
+        } else {
+            return vec![Horizontal];
+        }
+    } else {
+        if pos.x < 0 {
+            return vec![Slash];
+        } else if pos.x > -pos.y {
+            return vec![Backslash];
+        } else {
+            return vec![Horizontal];
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Orientation {
     Horizontal,
@@ -97,3 +134,28 @@ pub enum Orientation {
     Backslash,
 }
 
+impl fmt::Display for Orientation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::Orientation::*;
+        let s = match *self {
+            Horizontal => "Horizontal",
+            Slash => "Slash",
+            Backslash => "Backslash",
+        };
+
+        write!(f, "{}", s)
+    }
+}
+/*
+ * Test code for wall_orientation
+    let mut test_points = Pos::origo().neighbors(&14);
+    test_points.push(Pos::origo());
+    for p in test_points {
+        print!("{} ", p);
+        let ors = wall_orientation(p);
+        for o in ors {
+            print!("{} ", o);
+        }
+        print!("\n");
+    }
+*/
