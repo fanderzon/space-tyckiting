@@ -5,7 +5,6 @@ use rand::Rng;
 // Abstraction for the attacking methods to use
 // They pass in the number of available bots and this method will use the
 // right spread strategy for that number and return a vector
-// TODO: Implement actual smart shooting
 pub fn smart_attack_spread(pos: Pos, available_bots: i16) -> Vec<Pos> {
     let mut shoot_at: Vec<Pos> = Vec::new();
 
