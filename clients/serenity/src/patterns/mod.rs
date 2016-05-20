@@ -69,15 +69,6 @@ pub fn triangle_right(pos: Pos) -> Vec<Pos> {
                  Pos::new(x,   y-1) ];
 }
 
-pub fn rand_twin(pos: Pos) -> Vec<Pos> {
-    let ori = match rand::thread_rng().gen_range(0, 3) {
-        0 => Orientation::Horizontal,
-        1 => Orientation::Slash,
-        _ => Orientation::Backslash,
-    };
-    return twin(pos, ori);
-}
-
 pub fn twin(pos: Pos, orientation: Orientation) -> Vec<Pos> {
     let x = pos.x;
     let y = pos.y;

@@ -121,3 +121,11 @@ impl fmt::Display for Pos {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
+
+impl Add for Pos {
+    type Output = Pos;
+
+    fn add(self, other: Pos) -> Pos {
+        Pos { x: self.x + other.x, y: self.y + other.y }
+    }
+}
