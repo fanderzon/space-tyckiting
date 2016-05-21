@@ -59,7 +59,16 @@ impl Ai {
     }
 
     fn evade_random_pos(&self, bot: &Bot) -> Pos {
-        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
+        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius)
+            .iter()
+            .filter(|pos| {
+                self.asteroids
+                    .iter()
+                    .find(|as_pos| as_pos == pos)
+                    .is_none()
+            })
+            .cloned()
+            .collect::<Vec<Pos>>();
         *rand::thread_rng()
             .choose(&neighbors)
             .expect("Oh there were no neighbors? That's impossible.")
@@ -88,6 +97,12 @@ impl Ai {
             .collect();
 
         neighbors.iter()
+            .filter(|pos| {
+                self.asteroids
+                    .iter()
+                    .find(|as_pos| as_pos == pos)
+                    .is_none()
+            })
             .max_by_key( |pos| otherbots.iter()
                 .map( |otherbot| pos.distance(otherbot.pos))
                 .min()

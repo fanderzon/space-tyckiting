@@ -102,7 +102,7 @@ pub struct IncomingEvents {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct IncomingEnd {    
+pub struct IncomingEnd {
     pub you: Team,
     #[serde(rename="winnerTeamId")]
     pub winner_team_id: i16,
@@ -139,6 +139,12 @@ pub struct SeeEvent {
     pub source: i16,
     #[serde(rename="botId")]
     pub bot_id: i16,
+    pub pos: Pos,
+}
+
+// * `SeeAsteroid` Given when you pass by and See an asteroid.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+pub struct SeeAsteroidEvent {
     pub pos: Pos,
 }
 
