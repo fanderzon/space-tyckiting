@@ -41,9 +41,11 @@ impl Ai {
         let see_positions_this_round = see_positions.iter()
             .filter(|tup|tup.1 == self.round_id).collect::<Vec<_>>();
         println!("See positions this round {:?}", see_positions_this_round);
+        //TODO: Handle multiple seen ones
         if see_positions_this_round.len() > 0 {
             println!("Radar position found this round {:?}", see_positions_this_round[0].0);
 
+            //TODO: Don't do this if we've already found all asteroids
             // Because of asteroids we want to make sure that the first time we see something
             // We scan as we shoot so we can mark detect asteroids
             if last_mode == Scan {
