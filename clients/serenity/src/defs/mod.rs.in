@@ -142,7 +142,7 @@ pub struct SeeEvent {
     pub pos: Pos,
 }
 
-// * `see` Results seeing bots. You will never be included in this event.
+// * `SeeAsteroid` Given when you pass by and See an asteroid.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub struct SeeAsteroidEvent {
     pub pos: Pos,
