@@ -11,6 +11,7 @@ mod position;
 mod patterns;
 mod lists;
 mod log;
+mod tribool;
 
 use std::str::from_utf8;
 use websocket::{Message, Sender, Receiver};
