@@ -1,9 +1,11 @@
 extern crate serde; extern crate serde_json;
 
-use position::Pos;
 use defs;
-use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
 use defs::Event::*;
+use defs::{Config, Event, Action, ActionsMessage, IncomingEvents };
+use tribool::Tribool;
+use tribool::Tribool::*;
+use position::Pos;
 use strings::{ ACTIONS, NOACTION, CANNON };
 use lists::*;
 use lists::ActionMode::*;
@@ -22,6 +24,7 @@ pub struct Ai {
     radar_positions: (i16, Vec<Pos>),
     history: Vec<HistoryEntry>,
     asteroids: Vec<Pos>,
+    maybe_asteroids: Vec<Pos>,
     config: Config,
     logger: Logger,
 }
@@ -67,6 +70,7 @@ impl Ai {
             radar_positions: (0, radar_positions.clone()),
             history: Vec::new(),
             asteroids: Vec::new(),
+            maybe_asteroids: Vec::new(),
             config: start.config.clone(),
             logger: Logger::new(),
         };
@@ -97,26 +101,55 @@ impl Ai {
     // For this logic to work, we must have shot while radaring.
     // Maybe we should ensure this somehow later?
     // We do not want any false positives here...
-    fn is_echo_an_asteroid(&self, pos: Pos, cannon_positions: &Vec<Pos>, hit_events: &Vec<Event>) -> bool {
+    fn is_echo_an_asteroid(&self, pos: Pos, hit_events: &Vec<Event>) -> Tribool {
         // Check if this is already a recorded asteroid to save some work
         if self.is_pos_a_recorded_asteroid(&pos) {
-            return true;
+            return Yes;
         }
+
+        let we_sure;
+        let cannon_positions = match self.bots_alive() {
+            1 => {
+                // If we only have one bot, we couldn't shoot and fire at once.
+                we_sure = Maybe;
+                self.history
+                    .get_actions_for_round( CANNON, self.round_id - 2 )
+                    .iter()
+                    .map(|ac|ac.pos)
+                    .collect()
+            } 
+            _ => {
+                we_sure = Yes;
+                self.history
+                    .get_actions_for_round( CANNON, self.round_id - 1 )
+                    .iter()
+                    .map(|ac|ac.pos)
+                    .collect()
+            }
+        };
 
         // First we check if the position matches any cannon actions
         // Otherwise we can't draw any conclusions
         if self.is_pos_in_cannon_actions(pos, &cannon_positions) {
             // Next see if we can find a hit event on that position
-            return hit_events
-                .iter()
-                .filter_map(|ev| self.get_pos_from_hit(&ev, self.round_id))
-                .find(|hit_pos| *hit_pos == pos)
-                .is_none();
-            // If we shot at pos but didn't get a hit event, it's an asteroid.
+            if self.is_in_hit_events(pos, hit_events) {
+                return No;
+            } else {
+                return we_sure;
+            }
+            // If we shot at pos but didn't get a hit event, it's an asteroid. 
         } else {
             // We didn't shoot at it so we have no way of telling if it's an asteroid yet
-            return false;
+            return No;
         }
+    }
+
+    fn is_in_hit_events(&self, pos: Pos, hit_events: &Vec<Event>) -> bool {
+        return hit_events
+            .iter()
+            .filter_map(|ev| self.get_pos_from_hit(&ev, self.round_id))
+            .find(|hit_pos| hit_pos.distance(pos) <= self.config.cannon)
+            .is_some();
     }
 
     pub fn is_pos_a_recorded_asteroid(&self, pos: &Pos) -> bool {
@@ -136,11 +169,6 @@ impl Ai {
     fn update_state(&mut self, events: &Vec<Event>) {
         self.logger.log("Events:", 1);
         let mut log: Vec<(String, usize)> = Vec::new();
-        let last_round_cannon_positions: Vec<Pos> = self.history
-            .get_actions_for_round( CANNON, self.round_id - 1 )
-            .iter()
-            .map(|ac|ac.pos)
-            .collect();
         let hit_events_this_round = events
             .iter()
             .cloned()
@@ -154,14 +182,31 @@ impl Ai {
 
         for event in events {
             match *event {
-                Hit(_) => { }
+                Hit(ref ev) => {
+                    let mut log_msg = String::from("Hit ");
+                    if self.is_our_bot(ev.bot_id) {
+                        log_msg.push_str(&format!("own bot {}", ev.bot_id));
+                    } else {
+                        log_msg.push_str(&format!("enemy bot {}", ev.bot_id));
+                    }
+
+                    log_msg.push_str(" by ");
+
+                    if self.is_our_bot(ev.source) {
+                        log_msg.push_str(&format!("own bot {}", ev.source));
+                    } else {
+                        log_msg.push_str(&format!("enemy bot {}", ev.source));
+                    }
+
+                    log.push((log_msg, 2));
+                }
                 Die(ref ev) => {
                     let bot_opt = self.get_bot_mut(ev.bot_id);
                     if let Some(bot) = bot_opt {
                         bot.alive = false;
                         log.push((format!("Die own bot {}", bot.id), 2));
                     } else {
-                        // TODO: Enemy bot died, this should be recorded somehow.
+                        log.push((format!("Die enemy bot {}", ev.bot_id), 2));
                     }
                 }
                 See(ref ev) => {
@@ -175,11 +220,25 @@ impl Ai {
                 Echo(ref ev) => {
                     println!("RadarEcho enemy/asteroid on {:?}", ev.pos);
                     log.push((format!("RadarEcho enemy/asteroid on {}", ev.pos), 2));
-                    if self.is_echo_an_asteroid(ev.pos, &last_round_cannon_positions, &hit_events_this_round) {
-                        println!("Echo {:?} is an asteroid", ev.pos);
-                        log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
-                        self.asteroids.push(ev.pos);
-                    }
+                    match self.is_echo_an_asteroid(ev.pos, &hit_events_this_round ) {
+                        Yes => {
+                            println!("Echo {:?} is an asteroid", ev.pos);
+                            log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
+                            self.asteroids.push(ev.pos);
+                        },
+                        Maybe => {
+                            if self.maybe_asteroids.contains(&ev.pos) {
+                                println!("Two maybes on {:?}, it's probbly an asteroid.", ev.pos);
+                                log.push((format!("Recorded an asteroid at {} because of 2 maybes.", ev.pos), 2));
+                                self.asteroids.push(ev.pos);
+                            } else {
+                                println!("Echo {:?} might be an asteroid", ev.pos);
+                                log.push((format!("Recording that there might be an asteroid at {}.", ev.pos), 2));
+                                self.maybe_asteroids.push(ev.pos);
+                            }
+                        },
+                        No => {},
+                    };
                 }
                 Damaged(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
