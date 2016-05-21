@@ -2,7 +2,7 @@ extern crate serde;
 extern crate serde_json;
 
 use position::{Pos};
-use strings::{ HIT, DIE, SEE, RADARECHO, DETECTED, DAMAGED, MOVE, NOACTION, INVALID };
+use strings::{ HIT, DIE, SEE, SEEASTEROID, RADARECHO, DETECTED, DAMAGED, MOVE, NOACTION, INVALID };
 use std::fmt;
 
 include!(concat!(env!("OUT_DIR"), "/defs.rs"));
@@ -12,6 +12,7 @@ pub enum Event {
     Hit(HitEvent),
     Die(DieEvent),
     See(SeeEvent),
+    SeeAsteroid(SeeAsteroidEvent),
     Echo(EchoEvent),
     Detected(DetectedEvent),
     Damaged(DamagedEvent),
@@ -25,6 +26,7 @@ pub fn get_event_name(event: &Event) -> &str {
         &Event::Hit(_) => HIT,
         &Event::Die(_) => DIE,
         &Event::See(_) => SEE,
+        &Event::SeeAsteroid(_) => SEEASTEROID,
         &Event::Echo(_) => RADARECHO,
         &Event::Detected(_) => DETECTED,
         &Event::Damaged(_) => DAMAGED,
@@ -50,6 +52,11 @@ pub fn parse_event(ev: &SomeEvent) -> Event {
             return Event::See(SeeEvent{
                 bot_id: ev.bot_id.unwrap(),
                 source: ev.source.unwrap(),
+                pos: ev.pos.unwrap(),
+            });
+        }
+        SEEASTEROID => {
+            return Event::SeeAsteroid(SeeAsteroidEvent{
                 pos: ev.pos.unwrap(),
             });
         }
@@ -91,4 +98,3 @@ impl fmt::Display for Action {
         write!(f, "{} {} {}", self.bot_id, self.action_type, self.pos)
     }
 }
-

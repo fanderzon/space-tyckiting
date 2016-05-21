@@ -94,7 +94,7 @@ impl Ai {
     // If pos is within shoot radius of any cannon action,
     // AND there is no hit event at that position, we have an asteroid.
     // Otherwise we can't be sure, so return false.
-    // For this logic to work, we must have shot while radaring. 
+    // For this logic to work, we must have shot while radaring.
     // Maybe we should ensure this somehow later?
     // We do not want any false positives here...
     fn is_echo_an_asteroid(&self, pos: Pos, cannon_positions: &Vec<Pos>, hit_events: &Vec<Event>) -> bool {
@@ -112,7 +112,7 @@ impl Ai {
                 .filter_map(|ev| self.get_pos_from_hit(&ev, self.round_id))
                 .find(|hit_pos| *hit_pos == pos)
                 .is_none();
-            // If we shot at pos but didn't get a hit event, it's an asteroid. 
+            // If we shot at pos but didn't get a hit event, it's an asteroid.
         } else {
             // We didn't shoot at it so we have no way of telling if it's an asteroid yet
             return false;
@@ -166,6 +166,11 @@ impl Ai {
                 }
                 See(ref ev) => {
                     log.push((format!("See enemy on {:?}", ev.pos), 2));
+                }
+                SeeAsteroid(ref ev) => {
+                    println!("SeeAsteroid at {}", ev.pos);
+                    log.push((format!("SeeAsteroid at {}", ev.pos), 2));
+                    self.asteroids.push(ev.pos);
                 }
                 Echo(ref ev) => {
                     println!("RadarEcho enemy/asteroid on {:?}", ev.pos);

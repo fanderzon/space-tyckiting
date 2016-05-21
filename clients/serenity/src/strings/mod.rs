@@ -11,6 +11,7 @@ pub const RADAR: &'static str = "radar";
 pub const HIT: &'static str = "hit";
 pub const DIE: &'static str = "die";
 pub const SEE: &'static str = "see";
+pub const SEEASTEROID: &'static str = "seeAsteroid";
 //pub const ECHO: &'static str = "echo";
 pub const RADARECHO: &'static str = "radarEcho";
 // I actually discovered a spelling error right here.
@@ -21,4 +22,3 @@ pub const NOACTION: &'static str = "noaction";
 pub const INVALID: &'static str = "invalid";
 
 pub const ALL: &'static str = "all";
-
