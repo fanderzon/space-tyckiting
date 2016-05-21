@@ -1,6 +1,7 @@
 use defs::{ Action, Event, DieEvent };
 use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE };
 use position::Pos;
+use patterns::*;
 use ai::*;
 use lists::*;
 use lists::ActionMode::*;
@@ -73,7 +74,7 @@ impl Ai {
         let hit_events_this_round = hit_events.iter().cloned()
             .filter(|tup| tup.1 == self.round_id).collect::<Vec<(Event,i16)>>();
         if hit_events_this_round.len() > 0 {
-            if let Some(pos) = self.get_pos_from_hit(&hit_events_this_round[0].0, &self.round_id) {
+            if let Some(pos) = self.get_pos_from_hit(&hit_events_this_round[0].0, self.round_id) {
                 println!("Found pos of last hit, attacking {:?}", pos);
                 self.attack_pos(&mut actions, pos);
                 self.log_attack_actions(&actions, "have fresh hit data");
@@ -104,7 +105,7 @@ impl Ai {
                 .filter(|tup|tup.1 == last_round).collect::<Vec<(Event,i16)>>();
             if hit_events_last_round.len() > 0 {
                 println!("Found hit event last round {:?}", hit_events_last_round[0]);
-                if let Some(pos) = self.get_pos_from_hit(&hit_events_last_round[0].0, &last_round) {
+                if let Some(pos) = self.get_pos_from_hit(&hit_events_last_round[0].0, last_round) {
                     println!("Pos of last round hit {:?}", pos);
                     self.attack_and_scan_pos(&mut actions, pos);
                     self.log_attack_actions(&actions, "have one round old hit data");
@@ -132,7 +133,7 @@ impl Ai {
         let bots_alive = available_bots.len() as i16;
 
         available_bots.iter()
-            .zip(target.smart_attack_spread(bots_alive))
+            .zip(smart_attack_spread(target, bots_alive))
             .map(|(&ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
             .count();
     }
@@ -156,7 +157,7 @@ impl Ai {
         // and the following will be attack positions
         let available_bot_count = available_bots.len();
         let mut positions: Vec<Pos> = vec![target];
-        positions.append(&mut target.smart_attack_spread(available_bot_count as i16));
+        positions.append(&mut smart_attack_spread(target, available_bot_count as i16));
         let mut radared = false;
 
         println!("Attacking or scanning with {:?} bots, to: {:?}", available_bot_count, positions);
@@ -223,7 +224,7 @@ impl Ai {
     // that made the shot, so you can go back one round and get that bots cannon action
     // That means that the position this method returns will not have a 1:1 relationship
     // with the enemy bot position, but can be anywhere within the cannon radius (1)
-    pub fn get_pos_from_hit(&self, hit_event: &Event, round_id: &i16) -> Option<Pos> {
+    pub fn get_pos_from_hit(&self, hit_event: &Event, round_id: i16) -> Option<Pos> {
         let previous_round: i16 = round_id - 1;
         let mut source: i16 = -1;
         match hit_event {
