@@ -1,6 +1,6 @@
 use defs::Action;
 use position::Pos;
-use strings::{RADAR, NOACTION};
+use strings::{RADAR, CANNON, NOACTION};
 use ai::*;
 use util;
 use lists::{ ActionsList, HistoryList };
@@ -33,13 +33,19 @@ impl Ai {
             .collect();
 
 
+        let mut unexplored_echo = Pos::new(-1,-1);
+
         // Let's check if we were attacking last round
         match self.history.get_mode(self.round_id - 1) {
             // If so, and we switched back to scanning, let's see if we can find an echo we missed previously
             Attack => {
-
+                // Group the echo positions by round_id
                 let echo_positions: Vec<(i16,Vec<Pos>)> = self.history.get_echo_positions(30)
                     .iter()
+                    // Filter out known asteroid positions
+                    .filter(|tup| {
+                        !self.is_pos_a_recorded_asteroid(&tup.0)
+                    })
                     .fold(vec![], |mut acc, curr| {
                         let &(pos, round_id) = curr;
                         if acc.iter().find(|tup| tup.0 == round_id).is_some() {
@@ -52,27 +58,78 @@ impl Ai {
                         acc
                     });
 
-
+                println!("Asteroids {:?}", self.asteroids);
                 for (ref round_id, ref positions) in echo_positions.iter().rev().cloned().collect::<Vec<_>>() {
                     println!("round_id: {}: {:?}", round_id, positions);
+                    // If we have more than one echo, find out which one we didn't pursue
+                    if positions.len() > 1 {
+                        let cannon_actions = self.history.get_actions_for_round( CANNON, round_id + 1);
+                        let radar_actions = self.history.get_actions_for_round( RADAR, round_id + 1);
 
-                }
-            },
-            _ => {
-                // Resume basic sequential scanning
-                let (ref mut radar_index, ref positions) = self.radar_positions;
-                for bot_id in idle_bots {
-                    // replace with better radar logic
-                    if *radar_index > positions.len() as i16 - 1 {
-                        *radar_index = 0;
+                        // if there is a radar action it tells us exactly which position we went for
+                        let mut targeted_echo = Pos::new(-1,-1);
+                        if radar_actions.len() > 1 {
+                            targeted_echo = radar_actions[0].pos;
+                        } else if cannon_actions.len() > 0 {
+                            let mut considered = cannon_actions[0].pos.neighbors(4);
+                            considered.push(cannon_actions[0].pos);
+
+                            let action_tup = considered
+                                .iter()
+                                .fold( (1000,Pos::new(0,0) ), |acc, pos| {
+                                    // Total distance of this position from all cannons positions
+                                    let d: i16 = cannon_actions
+                                        .iter()
+                                        .fold(0, |acc,curr| acc + curr.pos.distance(*pos));
+                                    // Accumulate the position with the lowest ditance
+                                    if d < acc.0 {
+                                        (d, *pos)
+                                    }  else {
+                                        acc
+                                    }
+                                });
+                            targeted_echo = action_tup.1;
+                            println!("Action tuple {:?}", action_tup);
+                        }
+
+                        if targeted_echo.x >= 0 {
+                            println!("We targeted {:?} so picking another echo", targeted_echo);
+                            if let Some(ac) = cannon_actions.iter().find(|ac| ac.pos != targeted_echo) {
+                                println!("Setting unexplored_echo to {:?}", ac.pos);
+                                unexplored_echo = ac.pos;
+                            }
+                        }
+
+
                     }
-                    let target = self.radar_positions.1[*radar_index as usize];
-                    actions.set_action_for(bot_id, RADAR, target);
-                    *radar_index += 1;
-
-                    self.logger.log(&format!("Scanning with Bot {} on {} b/c it was idle.", bot_id, target), 2);
                 }
             },
+            _ => (),
+        }
+
+        // Do we have a lead of where to scan?
+        if unexplored_echo.x >= 0 {
+            println!("Found unexplored echo at {:?}", unexplored_echo);
+            // Scan around the unexplored_echo
+            for bot_id in idle_bots {
+                actions.set_action_for(bot_id, RADAR, unexplored_echo);
+
+                self.logger.log(&format!("Scanning with Bot {} on {} b/c it was idle and we had a lead at {}.", bot_id, unexplored_echo, unexplored_echo), 2);
+            }
+        } else {
+            // Resume basic sequential scanning
+            let (ref mut radar_index, ref positions) = self.radar_positions;
+            for bot_id in idle_bots {
+                // replace with better radar logic
+                if *radar_index > positions.len() as i16 - 1 {
+                    *radar_index = 0;
+                }
+                let target = self.radar_positions.1[*radar_index as usize];
+                actions.set_action_for(bot_id, RADAR, target);
+                *radar_index += 1;
+
+                self.logger.log(&format!("Scanning with Bot {} on {} b/c it was idle.", bot_id, target), 2);
+            }
         }
     }
 }
