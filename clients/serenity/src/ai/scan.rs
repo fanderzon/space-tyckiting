@@ -41,7 +41,7 @@ impl Ai {
             // If so, and we switched back to scanning, let's see if we can find an echo we missed previously
             Attack => {
                 // Group the echo positions by round_id
-                let echo_positions: Vec<(i16,Vec<Pos>)> = self.history.get_echo_positions(30)
+                let echo_positions: Vec<(i16,Vec<Pos>)> = self.history.get_echo_positions(50)
                     .iter()
                     // Filter out known asteroid positions
                     .filter(|tup| {
