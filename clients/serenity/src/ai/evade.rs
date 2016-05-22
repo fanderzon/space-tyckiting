@@ -61,13 +61,10 @@ impl Ai {
     fn evade_random_pos(&self, bot: &Bot) -> Pos {
         let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius)
             .iter()
-            .filter(|pos| {
-                self.asteroids
-                    .iter()
-                    .find(|as_pos| as_pos == pos)
-                    .is_none()
-            })
             .cloned()
+            .filter(|pos| {
+                !self.asteroids.is_asteroid(*pos)
+            })
             .collect::<Vec<Pos>>();
         *rand::thread_rng()
             .choose(&neighbors)
@@ -97,11 +94,9 @@ impl Ai {
             .collect();
 
         neighbors.iter()
+            .cloned()
             .filter(|pos| {
-                self.asteroids
-                    .iter()
-                    .find(|as_pos| as_pos == pos)
-                    .is_none()
+                !self.asteroids.is_asteroid(*pos)
             })
             .max_by_key( |pos| otherbots.iter()
                 .map( |otherbot| pos.distance(otherbot.pos))
