@@ -117,7 +117,7 @@ impl Ai {
                     .iter()
                     .map(|ac|ac.pos)
                     .collect()
-            } 
+            }
             _ => {
                 we_sure = Yes;
                 self.history
@@ -137,7 +137,7 @@ impl Ai {
             } else {
                 return we_sure;
             }
-            // If we shot at pos but didn't get a hit event, it's an asteroid. 
+            // If we shot at pos but didn't get a hit event, it's an asteroid.
         } else {
             // We didn't shoot at it so we have no way of telling if it's an asteroid yet
             return No;
@@ -215,7 +215,9 @@ impl Ai {
                 SeeAsteroid(ref ev) => {
                     println!("SeeAsteroid at {}", ev.pos);
                     log.push((format!("SeeAsteroid at {}", ev.pos), 2));
-                    self.asteroids.push(ev.pos);
+                    if !self.is_pos_a_recorded_asteroid(&ev.pos) {
+                        self.asteroids.push(ev.pos);
+                    }
                 }
                 Echo(ref ev) => {
                     println!("RadarEcho enemy/asteroid on {:?}", ev.pos);
@@ -224,13 +226,17 @@ impl Ai {
                         Yes => {
                             println!("Echo {:?} is an asteroid", ev.pos);
                             log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
-                            self.asteroids.push(ev.pos);
+                            if !self.is_pos_a_recorded_asteroid(&ev.pos) {
+                                self.asteroids.push(ev.pos);
+                            }
                         },
                         Maybe => {
                             if self.maybe_asteroids.contains(&ev.pos) {
                                 println!("Two maybes on {:?}, it's probbly an asteroid.", ev.pos);
                                 log.push((format!("Recorded an asteroid at {} because of 2 maybes.", ev.pos), 2));
-                                self.asteroids.push(ev.pos);
+                                if !self.is_pos_a_recorded_asteroid(&ev.pos) {
+                                    self.asteroids.push(ev.pos);
+                                }
                             } else {
                                 println!("Echo {:?} might be an asteroid", ev.pos);
                                 log.push((format!("Recording that there might be an asteroid at {}.", ev.pos), 2));
