@@ -34,7 +34,7 @@ impl Ai {
             .collect();
 
 
-        let mut unexplored_echo = Pos::new(-1,-1);
+        let mut unexplored_echo = Pos::new(-1000,-1000);
 
         // Let's check if we were attacking last round
         if self.round_id > 0 {
@@ -102,11 +102,11 @@ impl Ai {
                     }
                 },
                 _ => (),
-            }    
+            }
         }
 
         // Do we have a lead of where to scan?
-        if unexplored_echo.x >= 0 {
+        if unexplored_echo.x > -1000 {
             self.logger.log(&format!("We picked up a previous echo at {}.", unexplored_echo), 2);
             idle_bots.iter()
                 .zip(smart_scan_spread(unexplored_echo, idle_bots.len() as i16))
