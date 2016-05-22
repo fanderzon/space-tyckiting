@@ -23,7 +23,7 @@ pub struct Ai {
     round_id: i16,
     radar_positions: (i16, Vec<Pos>),
     history: Vec<HistoryEntry>,
-    asters: Vec<(Pos, bool)>,
+    asteroids: Vec<(Pos, bool)>,
     config: Config,
     logger: Logger,
 }
@@ -68,7 +68,7 @@ impl Ai {
             round_id: -1,
             radar_positions: (0, radar_positions.clone()),
             history: Vec::new(),
-            asters: Vec::new(),
+            asteroids: Vec::new(),
             config: start.config.clone(),
             logger: Logger::new(),
         };
@@ -101,7 +101,7 @@ impl Ai {
     // We do not want any false positives here...
     fn is_echo_an_asteroid(&self, pos: Pos, hit_events: &Vec<Event>) -> Tribool {
         // Check if this is already a recorded asteroid to save some work
-        if self.asters.is_asteroid(pos) {
+        if self.asteroids.is_asteroid(pos) {
             return Yes;
         }
 
@@ -115,7 +115,7 @@ impl Ai {
                     .iter()
                     .map(|ac|ac.pos)
                     .collect()
-            } 
+            }
             _ => {
                 we_sure = Yes;
                 self.history
@@ -135,7 +135,7 @@ impl Ai {
             } else {
                 return we_sure;
             }
-            // If we shot at pos but didn't get a hit event, it's an asteroid. 
+            // If we shot at pos but didn't get a hit event, it's an asteroid.
         } else {
             // We didn't shoot at it so we have no way of telling if it's an asteroid yet
             return No;
@@ -153,7 +153,7 @@ impl Ai {
     fn filter_asteroids_from_events(&self, events: &Vec<Event>) -> Vec<Event> {
         let mut events: Vec<Event> = events.to_vec();
         events.retain(|event| { match *event {
-            Echo(ref ev) => { !self.asters.is_asteroid(ev.pos) }
+            Echo(ref ev) => { !self.asteroids.is_asteroid(ev.pos) }
             _ => true
         }});
         return events;
@@ -209,7 +209,7 @@ impl Ai {
                 SeeAsteroid(ref ev) => {
                     println!("SeeAsteroid at {}", ev.pos);
                     log.push((format!("SeeAsteroid at {}", ev.pos), 2));
-                    self.asters.register(ev.pos);
+                    self.asteroids.register(ev.pos);
                 }
                 Echo(ref ev) => {
                     println!("RadarEcho enemy/asteroid on {:?}", ev.pos);
@@ -218,17 +218,17 @@ impl Ai {
                         Yes => {
                             println!("Echo {:?} is an asteroid", ev.pos);
                             log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
-                            self.asters.register(ev.pos);
+                            self.asteroids.register(ev.pos);
                         },
                         Maybe => {
-                            if self.asters.is_maybe_asteroid(ev.pos) {
+                            if self.asteroids.is_maybe_asteroid(ev.pos) {
                                 println!("Two maybes on {:?}, it's probbly an asteroid.", ev.pos);
                                 log.push((format!("Recorded an asteroid at {} because of 2 maybes.", ev.pos), 2));
-                                self.asters.register(ev.pos);
+                                self.asteroids.register(ev.pos);
                             } else {
                                 println!("Echo {:?} might be an asteroid", ev.pos);
                                 log.push((format!("Recording that there might be an asteroid at {}.", ev.pos), 2));
-                                self.asters.register_maybe(ev.pos);
+                                self.asteroids.register_maybe(ev.pos);
                             }
                         },
                         No => {},
