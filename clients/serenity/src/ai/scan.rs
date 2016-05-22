@@ -59,12 +59,9 @@ impl Ai {
                         acc
                     });
 
-                println!("Asteroids {:?}", self.asteroids);
                 for (ref round_id, ref positions) in echo_positions.iter().rev().cloned().collect::<Vec<_>>() {
-                    println!("round_id: {}: {:?}", round_id, positions);
                     // If we have more than one echo, find out which one we didn't pursue
                     if positions.len() > 1 {
-                        println!("More than one echo {:?}", positions);
                         let cannon_actions = self.history.get_actions_for_round( CANNON, round_id + 1);
                         let radar_actions = self.history.get_actions_for_round( RADAR, round_id + 1);
 
@@ -91,14 +88,10 @@ impl Ai {
                                     }
                                 });
                             targeted_echo = action_tup.1;
-                            println!("Action tuple {:?}", action_tup);
                         }
 
-                        println!("targeted_echo after check {:?}", targeted_echo);
                         if targeted_echo.x >= 0 {
-                            println!("We targeted {:?} so picking another echo", targeted_echo);
                             if let Some(ac) = cannon_actions.iter().find(|ac| ac.pos != targeted_echo) {
-                                println!("Setting unexplored_echo to {:?}", ac.pos);
                                 unexplored_echo = ac.pos;
                             }
                         }
@@ -112,17 +105,13 @@ impl Ai {
 
         // Do we have a lead of where to scan?
         if unexplored_echo.x >= 0 {
-            println!("Found unexplored echo at {:?}", unexplored_echo);
-            // Scan around the unexplored_echo
-            // for bot_id in idle_bots {
-            //     actions.set_action_for(bot_id, RADAR, unexplored_echo);
-            //
-            //     self.logger.log(&format!("Scanning with Bot {} on {} b/c it was idle and we had a lead at {}.", bot_id, unexplored_echo, unexplored_echo), 2);
-            // }
-
+            self.logger.log(&format!("We picked up a previous echo at {}.", unexplored_echo), 2);
             idle_bots.iter()
                 .zip(smart_scan_spread(unexplored_echo, idle_bots.len() as i16))
-                .map(|(&ref bot_id, ref pos)| actions.set_action_for(*bot_id, RADAR, pos.clamp(&self.config.field_radius)))
+                .map(|(&ref bot_id, ref pos)| {
+                    self.logger.log(&format!("Scanning with Bot {} on {} b/c it was idle and we picked up a historic echo.", bot_id, pos), 2);
+                    actions.set_action_for(*bot_id, RADAR, pos.clamp(&self.config.field_radius))
+                })
                 .count();
         } else {
             // Resume basic sequential scanning
