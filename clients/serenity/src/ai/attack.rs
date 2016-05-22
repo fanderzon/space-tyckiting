@@ -92,7 +92,7 @@ impl Ai {
             // Since we got here we know we have no echoes or hits this round,
             // how about last round?
             let see_positions_last_round = see_positions.iter()
-                .filter(|tup|!self.is_pos_a_recorded_asteroid(&tup.0))
+                .filter(|tup|!self.asters.is_asteroid(tup.0))
                 .filter(|tup|tup.1 == last_round).collect::<Vec<_>>();
 
             if see_positions_last_round.len() > 0 {
