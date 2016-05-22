@@ -35,10 +35,10 @@ impl Ai {
             .collect();
 
 
-        let mut unexplored_echo = Pos::new(-1000,-1000);
+        let mut unexplored_echo = None;
 
         // Let's check if we were attacking last round
-        if 0 != self.round_id && Attack == self.history.get_mode(self.round_id - 1) { 
+        if 0 != self.round_id && Attack == self.history.get_mode(self.round_id - 1) {
             // If so, and we switched back to scanning, let's see if we can find an echo we missed previously
             // Group the echo positions by round_id
             let mut echo_positions: Vec<(i16,Vec<Pos>)> = self.history.get_echo_positions(50)
@@ -84,8 +84,8 @@ impl Ai {
                 }
 
                 if let Some(targeted_echo) = targeted_echo {
-                    if let Some(ac) = cannon_actions.iter().find(|ac| ac.pos != targeted_echo) {
-                        unexplored_echo = ac.pos;
+                    if let Some(position) = positions.iter().find(|pos| pos.distance(targeted_echo) > 2) {
+                        unexplored_echo = Some(*position);
                     }
                 }
             }
@@ -93,7 +93,7 @@ impl Ai {
         }
 
         // Do we have a lead of where to scan?
-        if unexplored_echo.x > -1000 {
+        if let Some(unexplored_echo) = unexplored_echo {
             self.logger.log(&format!("We picked up a previous echo at {}.", unexplored_echo), 2);
             idle_bots.iter()
                 .zip(smart_scan_spread(unexplored_echo, idle_bots.len() as i16))
