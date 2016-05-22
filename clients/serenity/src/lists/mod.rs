@@ -79,7 +79,7 @@ pub trait HistoryList {
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action>;
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action>;
     fn set_mode(&mut self, round_id: &i16, mode: ActionMode);
-    fn get_mode(&self, round_id: &i16) -> ActionMode;
+    fn get_mode(&self, round_id: i16) -> ActionMode;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
@@ -222,6 +222,7 @@ impl HistoryList for Vec<HistoryEntry> {
         // get all echo positions
         let mut see_events = self.get_events( SEE, since );
         see_events.append(&mut self.get_events( RADARECHO, since ));
+        see_events.sort_by(|a, b| a.1.cmp(&b.1));
 
         see_events
             .iter()
@@ -293,8 +294,11 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     #[allow(dead_code)]
-    fn get_mode(&self, round_id: &i16) -> ActionMode {
-        self[*round_id as usize].mode.clone()
+    fn get_mode(&self, round_id: i16) -> ActionMode {
+        if round_id < 0 || round_id >= self.len() as i16 {
+            return ActionMode::Nomode;
+        }
+        return self[round_id as usize].mode.clone();
     }
 }
 
@@ -323,4 +327,3 @@ impl fmt::Display for ActionMode {
         write!(f, "{}", as_str)
     }
 }
-
