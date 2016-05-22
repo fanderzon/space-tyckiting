@@ -5,6 +5,42 @@ use position::Pos;
 use strings::{ NOACTION, ALL, RADARECHO, SEE, CANNON };
 use ai::bot::Bot;
 
+pub trait AsteroidList {
+    fn register(&mut self, pos: Pos);
+    fn register_maybe(&mut self, pos: Pos);
+    fn is_asteroid(&self, pos: Pos) -> bool;
+    fn is_maybe_asteroid(&self, pos: Pos) -> bool;
+}
+
+impl AsteroidList for Vec<(Pos, bool)> {
+    fn register(&mut self, pos: Pos) {
+        if !self.is_asteroid(pos) {
+            self.retain(|tup|tup.0 != pos);
+            self.push((pos, true));
+        }
+    }
+
+    fn register_maybe(&mut self, pos: Pos) {
+        if !self.is_maybe_asteroid(pos) {
+            self.push((pos, false));
+        }
+    }
+
+    fn is_asteroid(&self, pos: Pos) -> bool {
+        self.iter()
+            .find(|tup| tup.0 == pos && tup.1)
+            .is_some()
+    }
+
+    fn is_maybe_asteroid(&self, pos: Pos) -> bool {
+        self.iter()
+            .find(|tup| tup.0 == pos)
+            .is_some()
+    }
+}
+
+
+
 pub trait ActionsList {
     // Naming?
     fn populate(bots: &Vec<Bot>) -> Vec<Action>;
