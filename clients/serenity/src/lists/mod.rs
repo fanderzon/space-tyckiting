@@ -217,6 +217,7 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     // Convenience method returning an optional tuple of Pos and round_id for all see/echo events
+    // Returned in chronological order.
     #[allow(dead_code)]
     fn get_echo_positions(&self, since: i16) -> Vec<(Pos,i16)> {
         // get all echo positions
