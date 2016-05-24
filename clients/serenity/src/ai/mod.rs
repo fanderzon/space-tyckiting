@@ -23,8 +23,7 @@ pub struct Ai {
     round_id: i16,
     radar_positions: (i16, Vec<Pos>),
     history: Vec<HistoryEntry>,
-    asteroids: Vec<Pos>,
-    maybe_asteroids: Vec<Pos>,
+    asteroids: Vec<(Pos, bool)>,
     config: Config,
     logger: Logger,
 }
@@ -70,7 +69,6 @@ impl Ai {
             radar_positions: (0, radar_positions.clone()),
             history: Vec::new(),
             asteroids: Vec::new(),
-            maybe_asteroids: Vec::new(),
             config: start.config.clone(),
             logger: Logger::new(),
         };
@@ -103,7 +101,7 @@ impl Ai {
     // We do not want any false positives here...
     fn is_echo_an_asteroid(&self, pos: Pos, hit_events: &Vec<Event>) -> Tribool {
         // Check if this is already a recorded asteroid to save some work
-        if self.is_pos_a_recorded_asteroid(&pos) {
+        if self.asteroids.is_asteroid(pos) {
             return Yes;
         }
 
@@ -117,7 +115,7 @@ impl Ai {
                     .iter()
                     .map(|ac|ac.pos)
                     .collect()
-            } 
+            }
             _ => {
                 we_sure = Yes;
                 self.history
@@ -137,7 +135,7 @@ impl Ai {
             } else {
                 return we_sure;
             }
-            // If we shot at pos but didn't get a hit event, it's an asteroid. 
+            // If we shot at pos but didn't get a hit event, it's an asteroid.
         } else {
             // We didn't shoot at it so we have no way of telling if it's an asteroid yet
             return No;
@@ -152,23 +150,7 @@ impl Ai {
             .is_some();
     }
 
-    pub fn is_pos_a_recorded_asteroid(&self, pos: &Pos) -> bool {
-        self.asteroids.contains(pos)
-    }
-
-    fn filter_asteroids_from_events(&self, events: &Vec<Event>) -> Vec<Event> {
-        let mut events: Vec<Event> = events.to_vec();
-        events.retain(|event| { match *event {
-            Echo(ref ev) => { !self.is_pos_a_recorded_asteroid(&ev.pos) }
-            _ => true
-        }});
-        return events;
-    }
-
-    // Purpose: go through events and update our state so it's up to date for decisionmaking later
-    fn update_state(&mut self, events: &Vec<Event>) {
-        self.logger.log("Events:", 1);
-        let mut log: Vec<(String, usize)> = Vec::new();
+    fn filter_asteroids_from_events(&mut self, events: &Vec<Event>) -> Vec<Event> {
         let hit_events_this_round = events
             .iter()
             .cloned()
@@ -179,6 +161,38 @@ impl Ai {
                 }
             })
             .collect::<Vec<_>>();
+
+        let mut events: Vec<Event> = events.to_vec();
+        events.retain(|event| { match *event {
+            Echo(ref ev) => { 
+                let is_asteroid_now = self.is_echo_an_asteroid(ev.pos, &hit_events_this_round );
+
+                if Yes == is_asteroid_now && !self.asteroids.is_asteroid(ev.pos) {
+                    self.logger.log(&format!("Recorded an asteroid at {}.", ev.pos), 2);
+                    self.asteroids.register(ev.pos);
+                } else if Maybe == is_asteroid_now {
+                    if self.asteroids.is_maybe_asteroid(ev.pos) {
+                        println!("Two maybes on {:?}, it's probbly an asteroid.", ev.pos);
+                        self.logger.log(&format!("Recorded an asteroid at {} because of 2 maybes.", ev.pos), 2);
+                        self.asteroids.register(ev.pos);
+                    } else {
+                        println!("Echo {:?} might be an asteroid", ev.pos);
+                        self.logger.log(&format!("Recording that there might be an asteroid at {}.", ev.pos), 2);
+                        self.asteroids.register_maybe(ev.pos);
+                    }
+                }
+
+                Yes != is_asteroid_now
+            }
+            _ => true
+        }});
+        return events;
+    }
+
+    // Purpose: go through events and update our state so it's up to date for decisionmaking later
+    fn update_state(&mut self, events: &Vec<Event>) {
+        self.logger.log("Events:", 1);
+        let mut log: Vec<(String, usize)> = Vec::new();
 
         for event in events {
             match *event {
@@ -215,30 +229,11 @@ impl Ai {
                 SeeAsteroid(ref ev) => {
                     println!("SeeAsteroid at {}", ev.pos);
                     log.push((format!("SeeAsteroid at {}", ev.pos), 2));
-                    self.asteroids.push(ev.pos);
+                    self.asteroids.register(ev.pos);
                 }
                 Echo(ref ev) => {
-                    println!("RadarEcho enemy/asteroid on {:?}", ev.pos);
-                    log.push((format!("RadarEcho enemy/asteroid on {}", ev.pos), 2));
-                    match self.is_echo_an_asteroid(ev.pos, &hit_events_this_round ) {
-                        Yes => {
-                            println!("Echo {:?} is an asteroid", ev.pos);
-                            log.push((format!("Recorded an asteroid at {}.", ev.pos), 2));
-                            self.asteroids.push(ev.pos);
-                        },
-                        Maybe => {
-                            if self.maybe_asteroids.contains(&ev.pos) {
-                                println!("Two maybes on {:?}, it's probbly an asteroid.", ev.pos);
-                                log.push((format!("Recorded an asteroid at {} because of 2 maybes.", ev.pos), 2));
-                                self.asteroids.push(ev.pos);
-                            } else {
-                                println!("Echo {:?} might be an asteroid", ev.pos);
-                                log.push((format!("Recording that there might be an asteroid at {}.", ev.pos), 2));
-                                self.maybe_asteroids.push(ev.pos);
-                            }
-                        },
-                        No => {},
-                    };
+                    //TODO!!!
+                    log.push((format!("Echo enemy at {}", ev.pos), 2));
                 }
                 Damaged(ref ev) => {
                     let mut bot = self.get_bot_mut(ev.bot_id).expect("No bot on our team with this id wtf?");
@@ -268,14 +263,14 @@ impl Ai {
 
     pub fn handle_message(&mut self, events_json: IncomingEvents) -> ActionsMessage {
         self.round_id = events_json.round_id;
-        let log_msg = format!("round {}", self.round_id);
-        self.logger.log(&log_msg, 0);
+        self.logger.log(&format!("round {}", self.round_id), 0);
+
         let events = events_json.events.iter().map(defs::parse_event).collect();
+        let events: Vec<Event> = self.filter_asteroids_from_events(&events);
         self.update_state(&events);
 
         // Add events to history after filtering out asteroids
-        let events_without_asteroids: Vec<Event> = self.filter_asteroids_from_events(&events);
-        self.history.add_events(&self.round_id, &events_without_asteroids);
+        self.history.add_events(&self.round_id, &events);
 
         // Get mode and actions for the round and add those to history too
         let (mode,actions) = self.make_decisions();
