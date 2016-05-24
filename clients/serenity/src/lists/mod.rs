@@ -39,8 +39,6 @@ impl AsteroidList for Vec<(Pos, bool)> {
     }
 }
 
-
-
 pub trait ActionsList {
     // Naming?
     fn populate(bots: &Vec<Bot>) -> Vec<Action>;
@@ -54,8 +52,7 @@ impl ActionsList for Vec<Action> {
     // Populate a default (radar) action for each bot with random radar
     #[allow(dead_code)]
     fn populate(bots: &Vec<Bot>) -> Vec<Action> {
-        bots
-            .iter()
+        bots.iter()
             .map(|b| Action {
                 bot_id: b.id,
                 action_type: NOACTION.to_string(),
@@ -66,21 +63,21 @@ impl ActionsList for Vec<Action> {
 
     #[allow(dead_code)]
     fn get_action(&self, id: i16) -> Option<&Action> {
-        self
-            .iter()
+        self.iter()
             .find(|ac|ac.bot_id == id)
     }
 
     #[allow(dead_code)]
     fn get_action_mut(&mut self, id: i16) -> Option<&mut Action> {
-        self
-            .iter_mut()
+        self.iter_mut()
             .find(|ac|ac.bot_id == id)
     }
 
     #[allow(dead_code)]
     fn set_action_for(&mut self, id: i16, action_type: &str, pos: Pos) {
-        if let Some(action) = self.get_action_mut(id) {
+        let opt_act = self.get_action_mut(id);
+        debug_assert!(opt_act.is_some());
+        if let Some(action) = opt_act {
             action.action_type = action_type.to_string();
             action.pos = pos;
         }
@@ -121,6 +118,7 @@ pub trait HistoryList {
 impl HistoryList for Vec<HistoryEntry> {
     #[allow(dead_code)]
     fn add_events(&mut self, round_id: &i16, events: &Vec<Event>) {
+        debug_assert!(0 <= *round_id && *round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
         let filtered_events = self.filter_relevant(events);
         let mut new_entry: Option<HistoryEntry> = None;
         match self.get_mut(&round_id) {
@@ -142,6 +140,7 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>) {
+        debug_assert!(0 <= *round_id && *round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
         let mut new_entry: Option<HistoryEntry> = None;
         let a = actions.iter().cloned().collect();
         match self.get_mut(&round_id) {
@@ -163,22 +162,21 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn get(&self, round_id: &i16) -> Option<&HistoryEntry> {
-        self
-            .iter()
+        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
+        self.iter()
             .find(|he|he.round_id == *round_id)
     }
 
     #[allow(dead_code)]
     fn get_mut(&mut self, round_id: &i16) -> Option<&mut HistoryEntry> {
-        self
-            .iter_mut()
+        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
+        self.iter_mut()
             .find(|he|he.round_id == *round_id)
     }
 
     #[allow(dead_code)]
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event> {
-        events
-            .iter()
+        events.iter()
             .cloned()
             .filter(|e| {match *e {
                     Noaction(_) => false,
@@ -191,9 +189,9 @@ impl HistoryList for Vec<HistoryEntry> {
     // Returns each matching event as a tuple with round_id as second value
     #[allow(dead_code,unused_variables)]
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)> {
+        debug_assert!(since >= 0);
         let last_round = self.len() as i16 - 1;
-        self
-            .iter()
+        self.iter()
             .filter(|he| he.round_id > last_round - since  )
             .flat_map(|he| {
                 // Slightly ugly work around for returning a tuple with the round_id
@@ -213,8 +211,8 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn get_events_for_round(&self, match_event: &str, round_id: i16) -> Vec<Event> {
-        self
-            .iter()
+        debug_assert!(0 <= round_id && round_id < self.len() as i16);
+        self.iter()
             .filter(|he| he.round_id == round_id)
             .flat_map(|he| he.events
                 .iter()
@@ -255,6 +253,7 @@ impl HistoryList for Vec<HistoryEntry> {
     // Convenience method returning an optional tuple of Pos and round_id for all see/echo events
     #[allow(dead_code)]
     fn get_echo_positions(&self, since: i16) -> Vec<(Pos,i16)> {
+        debug_assert!(since >= 0);
         // get all echo positions
         let mut see_events = self.get_events( SEE, since );
         see_events.append(&mut self.get_events( RADARECHO, since ));
@@ -275,9 +274,9 @@ impl HistoryList for Vec<HistoryEntry> {
     // Returns each matching action as a tuple with round_id as second value
     #[allow(dead_code,unused_variables)]
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)> {
+        debug_assert!(since >= 0);
         let last_round = self.len() as i16 - 1;
-        self
-            .iter()
+        self.iter()
             .filter(|he| he.round_id > last_round - since  )
             .flat_map(|he| {
                 // Slightly ugly work around for returning a tuple with the round_id
@@ -285,11 +284,10 @@ impl HistoryList for Vec<HistoryEntry> {
                 for i in 0..he.events.len() {
                     round_ids.push(he.round_id);
                 }
-                he.actions
-                .iter()
-                .cloned()
-                .zip(round_ids)
-                .filter(|e| e.0.action_type == match_action.to_string())
+                he.actions.iter()
+                    .cloned()
+                    .zip(round_ids)
+                    .filter(|e| e.0.action_type == match_action.to_string())
             })
             .collect()
     }
