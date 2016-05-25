@@ -294,8 +294,8 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action> {
-        self
-            .iter()
+        debug_assert!(0 <= round_id && round_id < self.len() as i16);
+        self.iter()
             .filter(|he| he.round_id == round_id)
             .flat_map(|he| he.actions
                 .iter()
@@ -312,6 +312,8 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action> {
+        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
+        debug_assert!(0 <= *bot_id);
         self.get_actions_for_round( ALL, *round_id )
             .iter()
             .cloned()
@@ -320,7 +322,8 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn set_mode(&mut self, round_id: &i16, mode: ActionMode) {
-        match self.get_mut(&round_id) {
+        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
+        match self.get_mut(round_id) {
             Some(history_entry) => history_entry.mode = mode,
             None => ()
         }
@@ -328,6 +331,7 @@ impl HistoryList for Vec<HistoryEntry> {
 
     #[allow(dead_code)]
     fn get_mode(&self, round_id: &i16) -> ActionMode {
+        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
         self[*round_id as usize].mode.clone()
     }
 }
