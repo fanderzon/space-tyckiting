@@ -308,7 +308,14 @@ pub struct HistoryEntry {
     pub round_id: i16,
     pub events: Vec<Event>,
     pub actions: Vec<Action>,
+    pub decision: Decision,
+}
+
+#[derive(Debug, Clone)]
+pub struct Decision{
     pub mode: ActionMode,
+    pub target: Option<Pos>,
+    pub unused_echoes: Vec<Pos>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
