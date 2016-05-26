@@ -5,25 +5,15 @@ use patterns::*;
 use ai::*;
 use lists::*;
 use lists::ActionMode::*;
+use std::cmp::max;
 
 impl Ai {
     // Will alternate between all bots shooting at the last echo and 1 bot scanning
     // while the rest free bots shoots
     // Returns a Some(attack_mode) or None TODO: Maybe attack mode should be an enum?
     pub fn aggressive_attack_strategy(&mut self, mut actions: &mut Vec<Action>) -> bool {
-        let last_mode;
-        let last_round = if self.round_id - 1 >= 0 { self.round_id - 1 } else { 0 };
-        {
-            let round_entry = self.history.get(&last_round);
-            match round_entry {
-                Some(entry) => {
-                    last_mode = entry.mode;
-                },
-                None => {
-                    last_mode = Nomode;
-                }
-            }
-        }
+        let last_round = self.last_round();
+        let last_mode = self.last_action_mode();
         println!("Last mode {:?}", last_mode);
 
         // Gets tuples of (Pos,round_id) from echo/see events in the last n rounds
@@ -118,6 +108,23 @@ impl Ai {
         }
 
         return false;
+    }
+
+    fn last_action_mode(&self) -> ActionMode {
+        let round_entry = self.history.get(&self.last_round());
+        match round_entry {
+            Some(entry) => {
+                return entry.mode;
+            },
+            None => {
+                return Nomode;
+            }
+        }
+    }
+
+    fn last_round(&self) -> i16 {
+        //if self.round_id - 1 >= 0 { self.round_id - 1 } else { 0 };
+        max(self.round_id - 1, 0)
     }
 
     fn log_attack_actions(&mut self, actions: &Vec<Action>, motivation: &str, ) {
