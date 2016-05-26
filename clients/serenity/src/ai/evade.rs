@@ -59,15 +59,9 @@ impl Ai {
     }
 
     fn evade_random_pos(&self, bot: &Bot) -> Pos {
-        let neighbors = bot.pos.clamped_neighbors(self.config.moves_allowed, self.config.field_radius)
-            .iter()
-            .filter(|pos| {
-                self.asteroids
-                    .iter()
-                    .find(|as_pos| as_pos == pos)
-                    .is_none()
-            })
-            .cloned()
+        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius)
+            .into_iter()
+            .filter(|&pos| !self.asteroids.is_asteroid(pos))
             .collect::<Vec<Pos>>();
         *rand::thread_rng()
             .choose(&neighbors)
@@ -90,24 +84,18 @@ impl Ai {
         if bot.pos.distance(Pos{x: 0, y: 0}) > &self.config.field_radius - 2 {
             return self.evade_random_pos(&bot);
         }
-        let neighbors = bot.pos.clamped_neighbors(self.config.moves_allowed, self.config.field_radius);
+        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
         let otherbots: Vec<&Bot> = self.bots.iter()
             .by_ref()
             .filter(|otherbot| otherbot.id != bot.id)
             .collect();
 
-        neighbors.iter()
-            .filter(|pos| {
-                self.asteroids
-                    .iter()
-                    .find(|as_pos| as_pos == pos)
-                    .is_none()
-            })
+        neighbors.into_iter()
+            .filter(|&pos| !self.asteroids.is_asteroid(pos))
             .max_by_key( |pos| otherbots.iter()
-                .map( |otherbot| pos.distance(otherbot.pos))
+                .map(|otherbot| pos.distance(otherbot.pos))
                 .min()
                 .expect("There should be other bots"))
             .expect("There should be neighbor positions")
-            .clone()
     }
 }
