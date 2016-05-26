@@ -5,7 +5,7 @@ use strings::{RADAR, CANNON, NOACTION};
 use ai::*;
 use patterns::smart_scan_spread;
 use util;
-use lists::{ ActionsList, HistoryList, AsteroidList };
+use lists::{ ActionsList, HistoryList, AsteroidList, Decision };
 use lists::ActionMode::*;
 
 impl Ai {
@@ -19,7 +19,7 @@ impl Ai {
         }
     }
 
-    pub fn scan_with_idle_bots(&mut self, actions: &mut Vec<Action>) {
+    pub fn scan_with_idle_bots(&mut self, actions: &mut Vec<Action>, decision: &mut Decision) {
         // Get the bots available for scanning
         let idle_bots: Vec<i16> = self.bots
             .iter()

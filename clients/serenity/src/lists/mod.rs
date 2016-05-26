@@ -113,6 +113,8 @@ pub trait HistoryList {
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action>;
     fn set_mode(&mut self, round_id: &i16, mode: ActionMode);
     fn get_mode(&self, round_id: i16) -> ActionMode;
+    fn set_decision(&mut self, round_id: &i16, mode: Decision);
+    fn get_decision(&self, round_id: i16) -> Decision;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
@@ -336,6 +338,21 @@ impl HistoryList for Vec<HistoryEntry> {
         debug_assert!(0 <= round_id && round_id < self.len() as i16);
         self[round_id as usize].decision.mode.clone()
     }
+
+    #[allow(dead_code)]
+    fn set_decision(&mut self, round_id: &i16, decision: Decision) {
+        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
+        match self.get_mut(round_id) {
+            Some(history_entry) => history_entry.decision = decision,
+            None => ()
+        }
+    }
+
+    #[allow(dead_code)]
+    fn get_decision(&self, round_id: i16) -> Decision {
+        debug_assert!(0 <= round_id && round_id < self.len() as i16);
+        self[round_id as usize].decision.clone()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -357,12 +374,22 @@ pub struct Decision {
 }
 
 impl Decision {
-    fn with_defaults() -> Decision {
+    pub fn with_defaults() -> Decision {
         Decision {
             mode: ActionMode::Nomode,
             target: None,
             unused_echoes: Vec::new(),
         }
+    }
+
+    pub fn add_attack_decision(&mut self, target: &Pos, echoes: &Vec<Pos>) {
+        self.mode = ActionMode::Attack;
+        self.target = Some(*target);
+        self.unused_echoes = echoes
+            .into_iter()
+            .filter(|echo| *echo != target)
+            .cloned()
+            .collect();
     }
 }
 
