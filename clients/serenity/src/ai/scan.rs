@@ -5,7 +5,7 @@ use strings::{RADAR, CANNON, NOACTION};
 use ai::*;
 use patterns::smart_scan_spread;
 use util;
-use lists::{ ActionsList, HistoryList };
+use lists::{ ActionsList, HistoryList, AsteroidList };
 use lists::ActionMode::*;
 
 impl Ai {
@@ -43,7 +43,7 @@ impl Ai {
             // Group the echo positions by round_id
             let mut echo_positions: Vec<(i16,Vec<Pos>)> = self.history.get_echo_positions(50)
                 .iter()
-                .filter(|tup| !self.is_pos_a_recorded_asteroid(&tup.0) )
+                .filter(|tup| !self.asteroids.is_asteroid(tup.0) )
                 .fold(BTreeMap::new(), |mut acc, curr: &(Pos, i16)| {
                     acc.entry(curr.1).or_insert(vec![]).push(curr.0);
                     acc

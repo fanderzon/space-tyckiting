@@ -112,7 +112,7 @@ pub trait HistoryList {
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action>;
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action>;
     fn set_mode(&mut self, round_id: &i16, mode: ActionMode);
-    fn get_mode(&self, round_id: &i16) -> ActionMode;
+    fn get_mode(&self, round_id: i16) -> ActionMode;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
@@ -128,7 +128,7 @@ impl HistoryList for Vec<HistoryEntry> {
                     round_id: *round_id,
                     events: filtered_events,
                     actions: Vec::new(),
-                    mode: ActionMode::Nomode,
+                    decision: Decision::with_defaults(),
                 });
             }
         }
@@ -150,7 +150,7 @@ impl HistoryList for Vec<HistoryEntry> {
                     round_id: *round_id,
                     events: Vec::new(),
                     actions: a,
-                    mode: ActionMode::Nomode,
+                    decision: Decision::with_defaults(),
                 });
             }
         }
@@ -326,15 +326,15 @@ impl HistoryList for Vec<HistoryEntry> {
     fn set_mode(&mut self, round_id: &i16, mode: ActionMode) {
         debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
         match self.get_mut(round_id) {
-            Some(history_entry) => history_entry.mode = mode,
+            Some(history_entry) => history_entry.decision.mode = mode,
             None => ()
         }
     }
 
     #[allow(dead_code)]
-    fn get_mode(&self, round_id: &i16) -> ActionMode {
-        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
-        self[*round_id as usize].mode.clone()
+    fn get_mode(&self, round_id: i16) -> ActionMode {
+        debug_assert!(0 <= round_id && round_id < self.len() as i16);
+        self[round_id as usize].decision.mode.clone()
     }
 }
 
@@ -347,10 +347,23 @@ pub struct HistoryEntry {
 }
 
 #[derive(Debug, Clone)]
-pub struct Decision{
+pub struct Decision {
+    // Attack or Scan
     pub mode: ActionMode,
+    // The target Pos of the attack or scan (actual actions may have other positions because of spread)
     pub target: Option<Pos>,
+    // Echoes we got this round, but did not act on
     pub unused_echoes: Vec<Pos>,
+}
+
+impl Decision {
+    fn with_defaults() -> Decision {
+        Decision {
+            mode: ActionMode::Nomode,
+            target: None,
+            unused_echoes: Vec::new(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

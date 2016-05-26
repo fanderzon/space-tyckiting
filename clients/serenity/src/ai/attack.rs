@@ -17,7 +17,7 @@ impl Ai {
             let round_entry = self.history.get(&last_round);
             match round_entry {
                 Some(entry) => {
-                    last_mode = entry.mode;
+                    last_mode = entry.decision.mode;
                 },
                 None => {
                     last_mode = Nomode;

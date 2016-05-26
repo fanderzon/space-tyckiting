@@ -31,6 +31,11 @@ pub struct Ai {
 impl Ai {
     fn make_decisions(&mut self) -> (ActionMode, Vec<Action>) {
         let mut actions: Vec<Action> = Vec::populate(&self.bots); // NOACTIONS for every live bot
+        let mut decision = Decision {
+            mode: Nomode,
+            target: None,
+            unused_echoes: Vec::new(),
+        };
 
         // Set default mode, mode's are MODE_ATTACK or MODE_SCAN
         // evading is considered something that is up to each bot regardless of mode
@@ -164,7 +169,7 @@ impl Ai {
 
         let mut events: Vec<Event> = events.to_vec();
         events.retain(|event| { match *event {
-            Echo(ref ev) => { 
+            Echo(ref ev) => {
                 let is_asteroid_now = self.is_echo_an_asteroid(ev.pos, &hit_events_this_round );
 
                 if Yes == is_asteroid_now && !self.asteroids.is_asteroid(ev.pos) {
