@@ -93,7 +93,7 @@ impl Ai {
         neighbors.into_iter()
             .filter(|&pos| !self.asteroids.is_asteroid(pos))
             .max_by_key( |pos| otherbots.iter()
-                .map( |otherbot| pos.distance(otherbot.pos))
+                .map(|otherbot| pos.distance(otherbot.pos))
                 .min()
                 .expect("There should be other bots"))
             .expect("There should be neighbor positions")
