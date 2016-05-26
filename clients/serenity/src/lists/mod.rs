@@ -189,6 +189,7 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     // Returns each matching event as a tuple with round_id as second value
+    // Pass 1 for since if you want the current round.
     #[allow(dead_code,unused_variables)]
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)> {
         let last_round = self.len() as i16 - 1;
