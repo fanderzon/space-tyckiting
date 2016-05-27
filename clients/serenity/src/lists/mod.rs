@@ -39,6 +39,25 @@ impl AsteroidList for Vec<(Pos, bool)> {
     }
 }
 
+pub trait BotList {
+    fn render(&self) -> String;
+}
+
+impl BotList for Vec<Bot> {
+    fn render(&self) -> String {
+        if self.is_empty() {
+            return String::from("¤ <no bots> ¤");
+        } else {
+            let mut result = String::from("¤");
+            for bot in self {
+                result.push_str(&format!(" {} ¤", bot));
+            }
+            return result;
+        }
+    }
+
+}
+
 pub trait ActionsList {
     // Naming?
     fn populate(bots: &Vec<Bot>) -> Vec<Action>;
@@ -187,6 +206,7 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     // Returns each matching event as a tuple with round_id as second value
+    // Pass 1 for since if you want the current round.
     #[allow(dead_code,unused_variables)]
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)> {
         debug_assert!(since >= 0);
