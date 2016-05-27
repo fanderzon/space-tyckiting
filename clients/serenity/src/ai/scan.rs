@@ -1,9 +1,10 @@
 use defs::Action;
+use position::Pos;
 use strings::{RADAR, NOACTION};
 use ai::*;
 use patterns::smart_scan_spread;
 use util;
-use lists::{ ActionsList, HistoryList, Decision };
+use lists::{ ActionsList, HistoryList, AsteroidList, Decision };
 use lists::ActionMode::*;
 
 impl Ai {
@@ -36,7 +37,7 @@ impl Ai {
 
         let unused_echoes: Vec<(Pos,i16)> = self.history.get_unused_echoes(50)
             .into_iter()
-            .filter(|&(pos, round_id)| self.asteroids.is_asteroid(pos))
+            .filter(|&(pos, _)| self.asteroids.is_asteroid(pos))
             .collect();
 
         if unused_echoes.len() > 0 {

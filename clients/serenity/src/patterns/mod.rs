@@ -6,7 +6,7 @@ use std::fmt;
 // Abstraction for the attacking methods to use
 // They pass in the number of available bots and this method will use the
 // right spread strategy for that number and return a vector
-pub fn smart_attack_spread(pos: Pos, available_bots: i16) -> Vec<Pos> {
+pub fn smart_attack_spread(pos: Pos, available_bots: i16, map_radius: i16) -> Vec<Pos> {
     let mut shoot_at: Vec<Pos> = Vec::new();
 
     match available_bots {
@@ -18,7 +18,14 @@ pub fn smart_attack_spread(pos: Pos, available_bots: i16) -> Vec<Pos> {
         2 => {
             //TODO: Choose twin based on pos in map.
             let or: Orientation = *wall_orientation(pos).first().expect("Wall_or... should always return at least one value");
-            shoot_at = twin(pos, or);
+            shoot_at = twin(pos, or).into_iter()
+                .map(|p| {
+                    if at_edge(p, map_radius) {
+                        step_to_middle(p)
+                    } else {
+                        p
+                    }
+                }).collect();
         }
         1 => {
             shoot_at.push(pos.random_spread());
@@ -26,6 +33,10 @@ pub fn smart_attack_spread(pos: Pos, available_bots: i16) -> Vec<Pos> {
         _ => ()
     }
     shoot_at
+}
+
+fn at_edge(pos: Pos, map_radius: i16) -> bool {
+    pos.distance(Pos::origo()) >= map_radius
 }
 
 pub fn triangle_smart(pos: Pos) -> Vec<Pos> {
@@ -82,6 +93,16 @@ pub fn twin(pos: Pos, orientation: Orientation) -> Vec<Pos> {
     };
 }
 
+fn step_to_middle(pos: Pos) -> Pos {
+    if pos == Pos::origo() {
+        pos
+    } else {
+        let neighbors = pos.neighbors(1);
+        return neighbors.into_iter()
+            .min_by_key(|ref np| np.distance(Pos::origo()))
+            .unwrap()
+    }
+}
 
 pub fn wall_orientation(pos: Pos) -> Vec<Orientation> {
     use self::Orientation::*;
