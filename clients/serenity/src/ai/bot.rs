@@ -1,5 +1,8 @@
 use defs;
 use position::Pos;
+use std::fmt;
+
+const MIN_HEALTHY_HP: i16 = 4;
 
 #[allow(dead_code)]
 #[derive(Debug,Clone)]
@@ -20,5 +23,15 @@ impl Bot {
             pos: def.pos.unwrap(),
             hp: def.hp.unwrap(),
         };
+    }
+
+    pub fn is_healthy(&self) -> bool {
+        self.hp >= MIN_HEALTHY_HP
+    }
+}
+
+impl fmt::Display for Bot {
+    fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Bot {} Hp: {} alive: {} pos: {}", self.id, self.hp, self.alive, self.pos)
     }
 }

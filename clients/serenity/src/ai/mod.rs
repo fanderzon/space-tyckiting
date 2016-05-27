@@ -279,6 +279,8 @@ impl Ai {
         self.history.set_mode(&self.round_id, mode);
 
         self.logger.log(&actions.render(), 2);
+        self.logger.log(&self.bots.render(), 2);
+
         return self.make_actions_message(actions);
     }
 

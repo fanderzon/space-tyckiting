@@ -39,7 +39,24 @@ impl AsteroidList for Vec<(Pos, bool)> {
     }
 }
 
+pub trait BotList {
+    fn render(&self) -> String;
+}
 
+impl BotList for Vec<Bot> {
+    fn render(&self) -> String {
+        if self.is_empty() {
+            return String::from("¤ <no bots> ¤");
+        } else {
+            let mut result = String::from("¤");
+            for bot in self {
+                result.push_str(&format!(" {} ¤", bot));
+            }
+            return result;
+        }
+    }
+
+}
 
 pub trait ActionsList {
     // Naming?

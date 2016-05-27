@@ -3,6 +3,7 @@ use strings::{ CANNON, RADAR, MOVE, HIT, SEE, RADARECHO, DIE };
 use position::Pos;
 use patterns::*;
 use ai::*;
+use ai::bot::Bot;
 use lists::*;
 use lists::ActionMode::*;
 use std::cmp::max;
@@ -153,7 +154,8 @@ impl Ai {
     #[allow(dead_code)]
     pub fn attack_pos(&mut self, actions: &mut Vec<Action>, target: Pos) {
         let radius = self.config.field_radius;
-        let available_bots = self.get_live_bots();
+        //let available_bots = self.get_live_bots();
+        let available_bots = self.draft_healthy();
         let bots_alive = available_bots.len() as i16;
 
         available_bots.iter()
@@ -198,6 +200,12 @@ impl Ai {
                 }
             })
             .count();
+    }
+
+    fn draft_healthy(&self) -> Vec<Bot> {
+        self.get_live_bots().into_iter()
+            .filter(|bot| bot.is_healthy())
+            .collect()
     }
 
     // Give a position, get back the latest echo/see position within your max_radius
