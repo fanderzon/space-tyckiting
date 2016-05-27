@@ -51,7 +51,7 @@ impl Ai {
 
         println!("Action are {:?}", actions);
         // Filter out NOACTIONs before sending to server
-        return (decision, actions.iter().cloned().filter(|ac| ac.action_type != NOACTION.to_string()).collect());
+        return (decision, actions);
     }
 
     pub fn new(start: &defs::Start) -> Ai {
@@ -269,7 +269,8 @@ impl Ai {
         self.history.add_events(self.round_id, &events);
 
         // Get mode and actions for the round and add those to history too
-        let (decision,actions) = self.make_decisions();
+        let (decision, mut actions) = self.make_decisions();
+        actions.retain(|ref ac| ac.action_type != NOACTION.to_string());
 
         self.history.add_actions(self.round_id, &actions);
         self.history.set_decision(self.round_id, decision);

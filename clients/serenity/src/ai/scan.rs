@@ -1,10 +1,9 @@
 use defs::Action;
-use position::Pos;
-use strings::{RADAR, CANNON, NOACTION};
+use strings::{RADAR, NOACTION};
 use ai::*;
 use patterns::smart_scan_spread;
 use util;
-use lists::{ ActionsList, HistoryList, AsteroidList, Decision };
+use lists::{ ActionsList, HistoryList, Decision };
 use lists::ActionMode::*;
 
 impl Ai {
