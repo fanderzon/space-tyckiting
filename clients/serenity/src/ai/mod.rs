@@ -31,9 +31,6 @@ pub struct Ai {
 impl Ai {
     fn make_decisions(&mut self) -> (ActionMode, Vec<Action>) {
         let mut actions: Vec<Action> = Vec::populate(&self.bots); // NOACTIONS for every live bot
-
-        // Set default mode, mode's are MODE_ATTACK or MODE_SCAN
-        // evading is considered something that is up to each bot regardless of mode
         let mut mode = Scan;
 
         self.logger.log("Decisions", 1);
@@ -55,7 +52,7 @@ impl Ai {
 
         println!("Action are {:?}", actions);
         // Filter out NOACTIONs before sending to server
-        return (mode,actions.iter().cloned().filter(|ac| ac.action_type != NOACTION.to_string()).collect());
+        return (mode, actions);
     }
 
     pub fn new(start: &defs::Start) -> Ai {
@@ -273,7 +270,8 @@ impl Ai {
         self.history.add_events(&self.round_id, &events);
 
         // Get mode and actions for the round and add those to history too
-        let (mode,actions) = self.make_decisions();
+        let (mode, mut actions) = self.make_decisions();
+        actions.retain(|ref ac| ac.action_type != NOACTION.to_string());
 
         self.history.add_actions(&self.round_id, &actions);
         self.history.set_mode(&self.round_id, mode);
