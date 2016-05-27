@@ -142,7 +142,6 @@ impl HistoryList for Vec<HistoryEntry> {
     fn add_events(&mut self, round_id: i16, events: &Vec<Event>) {
         debug_assert!(0 <= round_id && round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
         let filtered_events = self.filter_relevant(events);
-        let mut new_entry: Option<HistoryEntry> = None;
         if self.len() as i16 > round_id {
             if let Some(history_entry) = self.get_mut(round_id) {
                 history_entry.events = filtered_events;
@@ -160,7 +159,6 @@ impl HistoryList for Vec<HistoryEntry> {
     #[allow(dead_code)]
     fn add_actions(&mut self, round_id: i16, actions: &Vec<Action>) {
         debug_assert!(0 <= round_id && round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
-        let mut new_entry: Option<HistoryEntry> = None;
         let a = actions.iter().cloned().collect();
         if self.len() as i16 > round_id {
             if let Some(history_entry) = self.get_mut(round_id) {
@@ -301,7 +299,7 @@ impl HistoryList for Vec<HistoryEntry> {
             .flat_map(|he| {
                 // Slightly ugly work around for returning a tuple with the round_id
                 let mut round_ids: Vec<i16> = Vec::new();
-                for i in 0..he.decision.unused_echoes.len() {
+                for _ in 0..he.decision.unused_echoes.len() {
                     round_ids.push(he.round_id);
                 }
                 he.decision.unused_echoes
