@@ -36,7 +36,6 @@ impl Ai {
         decision.mode = Scan;
 
         let unused_echoes = self.history.get_unused_echoes(50);
-        println!("unused_echoes {:?}", unused_echoes);
         if unused_echoes.len() > 0 {
             let (unused_pos, unused_round_id) = unused_echoes[0];
             println!("We picked up a previous echo at {} from round {}.", unused_pos, unused_round_id);

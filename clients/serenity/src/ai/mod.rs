@@ -275,6 +275,8 @@ impl Ai {
         self.history.set_decision(self.round_id, decision);
 
         self.logger.log(&actions.render(), 2);
+        self.logger.log(&self.bots.render(), 2);
+
         return self.make_actions_message(actions);
     }
 
