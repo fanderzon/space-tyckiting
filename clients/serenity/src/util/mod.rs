@@ -11,7 +11,7 @@ use position::{Pos};
 
 static ADDR: &'static str = "ws://localhost:3000";
 static AGENT: &'static str = "rust-websocket";
-static GAME_HOST: &'static str = "localhost";
+static GAME_HOST: &'static str = "10.3.200.123";
 static GAME_PORT: &'static str = "3000";
 
 // Feel free to write a better type annotation. It's not easy.
