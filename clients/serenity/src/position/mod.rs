@@ -35,7 +35,7 @@ impl Pos {
     }
 
     #[allow(dead_code)]
-    pub fn neighbors(&self, radius: &i16) -> Vec<Pos> {
+    pub fn neighbors(&self, radius: i16) -> Vec<Pos> {
         let mut result: Vec<Pos> = Vec::new();
         let x_min = self.x - radius;
         let x_max = self.x + radius;
@@ -45,7 +45,7 @@ impl Pos {
         for x in x_min..x_max {
             for y in y_min..y_max {
                 let new_pos = Pos { x: x, y: y };
-                if self.distance(new_pos) <= *radius && *self != new_pos {
+                if self.distance(new_pos) <= radius && *self != new_pos {
                     result.push(new_pos);
                 }
             }
@@ -55,12 +55,12 @@ impl Pos {
     }
 
     #[allow(dead_code)]
-    pub fn clamped_neighbors(&self, radius: &i16, field_radius: &i16) -> Vec<Pos> {
+    pub fn clamped_neighbors(&self, radius: i16, field_radius: i16) -> Vec<Pos> {
         let center = Pos { x: 0, y: 0 };
         self.neighbors(radius)
             .iter()
             .cloned()
-            .filter(|pos| pos.distance(center) <= *field_radius)
+            .filter(|pos| pos.distance(center) <= field_radius)
             .collect()
     }
 

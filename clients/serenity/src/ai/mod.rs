@@ -29,9 +29,9 @@ pub struct Ai {
 }
 
 impl Ai {
-    fn make_decisions(&mut self) -> (ActionMode, Vec<Action>) {
+    fn make_decisions(&mut self) -> (Decision, Vec<Action>) {
         let mut actions: Vec<Action> = Vec::populate(&self.bots); // NOACTIONS for every live bot
-        let mut mode = Scan;
+        let mut decision = Decision::with_defaults();
 
         self.logger.log("Decisions", 1);
         println!("\n---------------------------\nROUND: {:?}\n---------------------------\n", self.round_id);
@@ -40,19 +40,18 @@ impl Ai {
         self.evade_if_needed(&mut actions);
 
         // Attack if we have a target, evading bots will continue evading
-        let attacking: bool = self.aggressive_attack_strategy(&mut actions);
+        self.aggressive_attack_strategy(&mut actions, &mut decision);
 
         // If not attacking, use non evading bots to scan in a sequence
-        if attacking {
-            mode = Attack;
-        } else {
-            self.scan_with_idle_bots(&mut actions);
+        match decision.mode {
+            Attack => (),
+            _ => self.scan_with_idle_bots(&mut actions, &mut decision),
         }
-        self.logger.log(&format!("Mode: {}", mode), 2);
+        self.logger.log(&format!("Mode: {}", decision.mode), 2);
 
         println!("Action are {:?}", actions);
         // Filter out NOACTIONs before sending to server
-        return (mode, actions);
+        return (decision, actions);
     }
 
     pub fn new(start: &defs::Start) -> Ai {
@@ -161,7 +160,7 @@ impl Ai {
 
         let mut events: Vec<Event> = events.to_vec();
         events.retain(|event| { match *event {
-            Echo(ref ev) => { 
+            Echo(ref ev) => {
                 let is_asteroid_now = self.is_echo_an_asteroid(ev.pos, &hit_events_this_round );
 
                 if Yes == is_asteroid_now && !self.asteroids.is_asteroid(ev.pos) {
@@ -267,14 +266,14 @@ impl Ai {
         self.update_state(&events);
 
         // Add events to history after filtering out asteroids
-        self.history.add_events(&self.round_id, &events);
+        self.history.add_events(self.round_id, &events);
 
         // Get mode and actions for the round and add those to history too
-        let (mode, mut actions) = self.make_decisions();
+        let (decision, mut actions) = self.make_decisions();
         actions.retain(|ref ac| ac.action_type != NOACTION.to_string());
 
-        self.history.add_actions(&self.round_id, &actions);
-        self.history.set_mode(&self.round_id, mode);
+        self.history.add_actions(self.round_id, &actions);
+        self.history.set_decision(self.round_id, decision);
 
         self.logger.log(&actions.render(), 2);
         self.logger.log(&self.bots.render(), 2);
