@@ -157,6 +157,33 @@ impl Ai {
         }
     }
 
+    pub fn avoid_friendly_fire(&self, target: &Pos) -> Pos {
+        let matching_bot_positions: Vec<Pos> = self.get_live_bots()
+            .iter()
+            .map(|bot| bot.pos)
+            .filter(|bot_pos| bot_pos.distance(*target) < self.config.cannon)
+            .collect();
+
+        if matching_bot_positions.len() > 0 {
+            if let Some(new_pos) = target.clamped_neighbors(self.config.cannon + 2, self.config.field_radius)
+                .iter()
+                .filter(|pos| {
+                    let neighbor = *pos;
+                    matching_bot_positions
+                        .iter()
+                        // filter out the positions that 1 or more bots are within cannon distance of
+                        .filter(|p| p.distance(*neighbor) < self.config.cannon)
+                        .count() == 0
+                })
+                .min_by_key(|min_pos| min_pos.distance(*target)) {
+                    println!("Avoiding friendly fire and moving cannons pos from {:?} to {:?}", target, new_pos);
+                    return *new_pos;
+                }
+
+        }
+        return *target;
+    }
+
     // Will just attack a position with all we've got
     // Typical use: We have a fresh echo or hit (from this round)
     #[allow(dead_code)]
@@ -167,7 +194,10 @@ impl Ai {
         let bots_alive = available_bots.len() as i16;
 
         available_bots.iter()
-            .zip(smart_attack_spread(target, bots_alive))
+            .zip(smart_attack_spread(target, bots_alive)
+                .iter()
+                .map(|pos| self.avoid_friendly_fire(pos)
+            ))
             .map(|(&ref bot, ref pos)| actions.set_action_for(bot.id, CANNON, pos.clamp(&radius)))
             .count();
     }
@@ -204,7 +234,7 @@ impl Ai {
                     actions.set_action_for(bot.id, RADAR, *pos);
                     radared = true;
                 } else {
-                    actions.set_action_for(bot.id, CANNON, *pos);
+                    actions.set_action_for(bot.id, CANNON, self.avoid_friendly_fire(pos));
                 }
             })
             .count();
