@@ -207,7 +207,7 @@ impl Ai {
         let bots_alive = available_bots.len() as i16;
 
         available_bots.iter()
-            .zip(smart_attack_spread(target, bots_alive)
+            .zip(smart_attack_spread(target, bots_alive, self.config.field_radius)
                 .iter()
                 .map(|pos| self.avoid_friendly_fire(pos)
             ))
@@ -234,7 +234,7 @@ impl Ai {
         // and the following will be attack positions
         let available_bot_count = available_bots.len();
         let mut positions: Vec<Pos> = vec![target];
-        positions.append(&mut smart_attack_spread(target, available_bot_count as i16));
+        positions.append(&mut smart_attack_spread(target, available_bot_count as i16, self.config.field_radius));
         let mut radared = false;
 
         println!("Attacking or scanning with {:?} bots, to: {:?}", available_bot_count, positions);
