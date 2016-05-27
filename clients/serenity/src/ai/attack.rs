@@ -79,34 +79,47 @@ impl Ai {
         // of something to shoot at, this is where we look if we are in attack mode
         // but just had some bad luck last round
         if self.last_action_mode() == Attack {
-            let hit_events = self.hits_on_enemies(5);
             println!("We were attacking last round, let's continue with that if we can");
-            // Since we got here we know we have no echoes or hits this round,
-            // how about last round?
-            let see_positions = self.history.get_echo_positions(2);
-            let see_positions_last_round = see_positions.iter()
-                .filter(|tup|!self.asteroids.is_asteroid(tup.0))
-                .filter(|tup|tup.1 == self.last_round()).collect::<Vec<_>>();
 
-            if see_positions_last_round.len() > 0 {
-                println!("Radar position found last round {:?}", see_positions_last_round[0].0);
-                self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0);
-                self.log_attack_actions(&actions, "have one round old seen data");
+            let exc_opt = self.see_lastround_exit_code(actions);
+            if exc_opt.is_some() {return exc_opt;}
+
+            let exc_opt = self.hit_lastround_exit_code(actions);
+            if exc_opt.is_some() {return exc_opt;}
+        }
+        return None;
+    }
+
+
+    fn hit_lastround_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
+        let hit_events = self.hits_on_enemies(5);
+        let hit_events_last_round = hit_events.iter().cloned()
+            .filter(|tup|tup.1 == self.last_round()).collect::<Vec<(Event,i16)>>();
+        if hit_events_last_round.len() > 0 {
+            println!("Found hit event last round {:?}", hit_events_last_round[0]);
+            if let Some(pos) = self.get_pos_from_hit(&hit_events_last_round[0].0, self.last_round()) {
+                println!("Pos of last round hit {:?}", pos);
+                self.attack_and_scan_pos(&mut actions, pos);
+                self.log_attack_actions(&actions, "have one round old hit data");
                 return Some(true);
             }
+        }
+        return None;
+    }
 
-            // How about hit events last round?
-            let hit_events_last_round = hit_events.iter().cloned()
-                .filter(|tup|tup.1 == self.last_round()).collect::<Vec<(Event,i16)>>();
-            if hit_events_last_round.len() > 0 {
-                println!("Found hit event last round {:?}", hit_events_last_round[0]);
-                if let Some(pos) = self.get_pos_from_hit(&hit_events_last_round[0].0, self.last_round()) {
-                    println!("Pos of last round hit {:?}", pos);
-                    self.attack_and_scan_pos(&mut actions, pos);
-                    self.log_attack_actions(&actions, "have one round old hit data");
-                    return Some(true);
-                }
-            }
+    fn see_lastround_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
+        // Since we got here we know we have no echoes or hits this round,
+        // how about last round?
+        let see_positions = self.history.get_echo_positions(2);
+        let see_positions_last_round = see_positions.iter()
+            .filter(|tup|!self.asteroids.is_asteroid(tup.0))
+            .filter(|tup|tup.1 == self.last_round()).collect::<Vec<_>>();
+
+        if see_positions_last_round.len() > 0 {
+            println!("Radar position found last round {:?}", see_positions_last_round[0].0);
+            self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0);
+            self.log_attack_actions(&actions, "have one round old seen data");
+            return Some(true);
         }
         return None;
     }
