@@ -118,6 +118,35 @@ pub fn wall_orientation(pos: Pos) -> Vec<Orientation> {
     }
 }
 
+pub fn smart_scan_spread(pos: Pos, available_bots: i16) -> Vec<Pos> {
+    let mut scan: Vec<Pos> = Vec::new();
+    let x = pos.x;
+    let y = pos.y;
+
+    match available_bots {
+        4 => {
+            scan = vec![ Pos::new(x, y-3),
+                         Pos::new(x+3, y-3),
+                         Pos::new(x-3, y+3),
+                         Pos::new(x, y+3)  ];
+        },
+        3 => {
+            scan = vec![ Pos::new(x-1, y-2),
+                         Pos::new(x-2, y+2),
+                         Pos::new(x+2, y+1) ];
+        },
+        2 => {
+            scan = vec![ Pos::new(x-2, y+1),
+                         Pos::new(x+2, y-1) ];
+        }
+        1 => {
+            scan = vec![pos]
+        },
+        _ => ()
+    }
+    scan
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Orientation {
     Horizontal,

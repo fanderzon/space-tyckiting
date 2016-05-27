@@ -15,12 +15,12 @@ impl Ai {
     // Well, I noticed the strategy consisted of several steps where we do some stuff and then
     // maybe return if a condition is met. So, I extracted those steps and now they are
     // functions that will return Some(exit_code) if they wish to end there with that code,
-    // or None if they wish to let the next step run. 
-    pub fn aggressive_attack_strategy(&mut self, mut actions: &mut Vec<Action>) -> bool {
+    // or None if they wish to let the next step run.
+    pub fn aggressive_attack_strategy(&mut self, mut actions: &mut Vec<Action>, decision: &mut Decision) -> bool {
         if let Some(exc) = self.killed_exit_code()               { return exc; }
-        if let Some(exc) = self.shoot_echoes_exit_code(actions)  { return exc; }
-        if let Some(exc) = self.shoot_hits_exit_code(actions)    { return exc; }
-        if let Some(exc) = self.shoot_history_exit_code(actions) { return exc; }
+        if let Some(exc) = self.shoot_echoes_exit_code(actions, decision)  { return exc; }
+        if let Some(exc) = self.shoot_hits_exit_code(actions, decision)    { return exc; }
+        if let Some(exc) = self.shoot_history_exit_code(actions, decision) { return exc; }
         return false;
     }
 
@@ -37,22 +37,27 @@ impl Ai {
         }
     }
 
-    fn shoot_echoes_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
+    fn shoot_echoes_exit_code(&mut self, mut actions: &mut Vec<Action>, decision: &mut Decision) -> Option<bool> {
         // Are there any echoes this round? shoot at them...
-        let see_positions_this_round = self.history.get_echo_positions(1);
+        let see_positions_this_round = self.history.get_echo_positions(1)
+            .iter()
+            .map(|tup| tup.0)
+            .collect::<Vec<_>>();
+
         println!("See positions this round {:?}", see_positions_this_round);
         if see_positions_this_round.len() > 0 {
             //TODO: Handle multiple seen ones
-            println!("Radar position found this round {:?}", see_positions_this_round[0].0);
+            println!("Radar position found this round {:?}", see_positions_this_round[0]);
 
             //TODO: Don't do this if we've already found all asteroids
             // Because of asteroids we want to make sure that the first time we see something
             // We scan as we shoot so we can mark detect asteroids
             if self.last_action_mode() == Scan {
-                self.attack_and_scan_pos(&mut actions, see_positions_this_round[0].0);
+                self.attack_and_scan_pos(&mut actions, see_positions_this_round[0]);
             } else {
-                self.attack_pos(&mut actions, see_positions_this_round[0].0);
+                self.attack_pos(&mut actions, see_positions_this_round[0]);
             }
+            decision.add_attack_decision(&see_positions_this_round[0], &see_positions_this_round);
 
             self.log_attack_actions(&actions, "have fresh seen data");
             return Some(true);
@@ -60,12 +65,13 @@ impl Ai {
         return None;
     }
 
-    fn shoot_hits_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
+    fn shoot_hits_exit_code(&mut self, mut actions: &mut Vec<Action>, decision: &mut Decision) -> Option<bool> {
         // Gets tuples of (Event,round_id) from hit events in the last n rounds
         let hit_events_this_round = self.hits_on_enemies(1);
         if hit_events_this_round.len() > 0 {
             if let Some(pos) = self.get_pos_from_hit(&hit_events_this_round[0].0, self.round_id) {
                 println!("Found pos of last hit, attacking {:?}", pos);
+                decision.add_attack_decision(&pos, &vec![]);
                 self.attack_pos(&mut actions, pos);
                 self.log_attack_actions(&actions, "have fresh hit data");
                 return Some(true);
@@ -74,7 +80,7 @@ impl Ai {
         return None;
     }
 
-    fn shoot_history_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
+    fn shoot_history_exit_code(&mut self, mut actions: &mut Vec<Action>, decision: &mut Decision) -> Option<bool> {
         // So far we have not really used the mode field because we've had fresh data
         // of something to shoot at, this is where we look if we are in attack mode
         // but just had some bad luck last round
@@ -85,12 +91,14 @@ impl Ai {
             // how about last round?
             let see_positions = self.history.get_echo_positions(2);
             let see_positions_last_round = see_positions.iter()
-                .filter(|tup|!self.asteroids.is_asteroid(tup.0))
-                .filter(|tup|tup.1 == self.last_round()).collect::<Vec<_>>();
+                .filter(|tup|tup.1 == self.last_round())
+                .filter_map(|tup| if !self.asteroids.is_asteroid(tup.0) { Some(tup.0) } else { None })
+                .collect::<Vec<_>>();
 
             if see_positions_last_round.len() > 0 {
-                println!("Radar position found last round {:?}", see_positions_last_round[0].0);
-                self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0);
+                println!("Radar position found last round {:?}", see_positions_last_round[0]);
+                decision.add_attack_decision(&see_positions_last_round[0], &see_positions_last_round);
+                self.attack_and_scan_pos(&mut actions, see_positions_last_round[0]);
                 self.log_attack_actions(&actions, "have one round old seen data");
                 return Some(true);
             }
@@ -130,7 +138,7 @@ impl Ai {
         let round_entry = self.history.get(&self.last_round());
         match round_entry {
             Some(entry) => {
-                return entry.mode;
+                return entry.decision.mode;
             },
             None => {
                 return Nomode;

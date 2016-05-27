@@ -59,7 +59,7 @@ impl Ai {
     }
 
     fn evade_random_pos(&self, bot: &Bot) -> Pos {
-        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius)
+        let neighbors = bot.pos.clamped_neighbors(self.config.moves_allowed, self.config.field_radius)
             .into_iter()
             .filter(|&pos| !self.asteroids.is_asteroid(pos))
             .collect::<Vec<Pos>>();
@@ -84,7 +84,7 @@ impl Ai {
         if bot.pos.distance(Pos{x: 0, y: 0}) > &self.config.field_radius - 2 {
             return self.evade_random_pos(&bot);
         }
-        let neighbors = bot.pos.clamped_neighbors(&self.config.moves_allowed, &self.config.field_radius);
+        let neighbors = bot.pos.clamped_neighbors(self.config.moves_allowed, self.config.field_radius);
         let otherbots: Vec<&Bot> = self.bots.iter()
             .by_ref()
             .filter(|otherbot| otherbot.id != bot.id)
