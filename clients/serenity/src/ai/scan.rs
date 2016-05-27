@@ -35,7 +35,11 @@ impl Ai {
 
         decision.mode = Scan;
 
-        let unused_echoes = self.history.get_unused_echoes(50);
+        let unused_echoes: Vec<(Pos,i16)> = self.history.get_unused_echoes(50)
+            .into_iter()
+            .filter(|&(pos, round_id)| self.asteroids.is_asteroid(pos))
+            .collect();
+
         if unused_echoes.len() > 0 {
             let (unused_pos, unused_round_id) = unused_echoes[0];
             println!("We picked up a previous echo at {} from round {}.", unused_pos, unused_round_id);
