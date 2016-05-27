@@ -10,18 +10,33 @@ use std::cmp::max;
 impl Ai {
     // Will alternate between all bots shooting at the last echo and 1 bot scanning
     // while the rest free bots shoots
-    // Returns a Some(attack_mode) or None TODO: Maybe attack mode should be an enum?
+    // WFT are exit codes?
+    // Well, I noticed the strategy consisted of several steps where we do some stuff and then
+    // maybe return if a condition is met. So, I extracted those steps and now they are
+    // functions that will return Some(exit_code) if they wish to end there with that code,
+    // or None if they wish to let the next step run. 
     pub fn aggressive_attack_strategy(&mut self, mut actions: &mut Vec<Action>) -> bool {
-        // Gets tuples of (Pos,round_id) from echo/see events in the last n rounds
+        if let Some(exc) = self.killed_exit_code()               { return exc; }
+        if let Some(exc) = self.shoot_echoes_exit_code(actions)  { return exc; }
+        if let Some(exc) = self.shoot_hits_exit_code(actions)    { return exc; }
+        if let Some(exc) = self.shoot_history_exit_code(actions) { return exc; }
+        return false;
+    }
 
-        // Don't continue to attack if we killed something
-        // TODO: Look at hit events with this bot_id, then get the pos of that hit id
-        // and check if we have other radar echoes to pursue
-        if let Some(ev) = self.get_possible_die_event() {
+    // Don't continue to attack if we killed something
+    // TODO: Look at hit events with this bot_id, then get the pos of that hit id
+    // and check if we have other radar echoes to pursue
+    fn killed_exit_code(&mut self) -> Option<bool> {
+        if let Some(ev) = self.get_possible_kill() {
             println!("We killed something, back to scanning: {:?}", ev);
-            return false;
+            self.logger.log(&format!("We killed something, back to scanning: {:?}", ev), 2);
+            return Some(false);
+        } else {
+            return None;
         }
+    }
 
+    fn shoot_echoes_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
         // Are there any echoes this round? shoot at them...
         let see_positions_this_round = self.history.get_echo_positions(1);
         println!("See positions this round {:?}", see_positions_this_round);
@@ -39,28 +54,31 @@ impl Ai {
             }
 
             self.log_attack_actions(&actions, "have fresh seen data");
-            return true;
+            return Some(true);
         }
+        return None;
+    }
 
+    fn shoot_hits_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
         // Gets tuples of (Event,round_id) from hit events in the last n rounds
-        let hit_events = self.hits_on_enemies(5);
-
-        // Are there any hit events this round, continue shooting
-        let hit_events_this_round = hit_events.iter().cloned()
-            .filter(|tup| tup.1 == self.round_id).collect::<Vec<(Event,i16)>>();
+        let hit_events_this_round = self.hits_on_enemies(1);
         if hit_events_this_round.len() > 0 {
             if let Some(pos) = self.get_pos_from_hit(&hit_events_this_round[0].0, self.round_id) {
                 println!("Found pos of last hit, attacking {:?}", pos);
                 self.attack_pos(&mut actions, pos);
                 self.log_attack_actions(&actions, "have fresh hit data");
-                return true;
+                return Some(true);
             }
         }
+        return None;
+    }
 
+    fn shoot_history_exit_code(&mut self, mut actions: &mut Vec<Action>) -> Option<bool> {
         // So far we have not really used the mode field because we've had fresh data
         // of something to shoot at, this is where we look if we are in attack mode
         // but just had some bad luck last round
         if self.last_action_mode() == Attack {
+            let hit_events = self.hits_on_enemies(5);
             println!("We were attacking last round, let's continue with that if we can");
             // Since we got here we know we have no echoes or hits this round,
             // how about last round?
@@ -73,7 +91,7 @@ impl Ai {
                 println!("Radar position found last round {:?}", see_positions_last_round[0].0);
                 self.attack_and_scan_pos(&mut actions, see_positions_last_round[0].0);
                 self.log_attack_actions(&actions, "have one round old seen data");
-                return true;
+                return Some(true);
             }
 
             // How about hit events last round?
@@ -85,13 +103,11 @@ impl Ai {
                     println!("Pos of last round hit {:?}", pos);
                     self.attack_and_scan_pos(&mut actions, pos);
                     self.log_attack_actions(&actions, "have one round old hit data");
-                    return true;
+                    return Some(true);
                 }
             }
-
         }
-
-        return false;
+        return None;
     }
 
     fn hits_on_enemies(&self, since: i16) -> Vec<(Event, i16)> {
@@ -108,8 +124,6 @@ impl Ai {
             })
             .collect()
     }
-
-
 
     fn last_action_mode(&self) -> ActionMode {
         let round_entry = self.history.get(&self.last_round());
@@ -258,21 +272,17 @@ impl Ai {
         }
     }
 
-    // Convenience for acting on an enemy die event, needed?
+    // Returns one die event on enemy bot from this round is there was one. Else None.
     #[allow(dead_code)]
-    fn get_possible_die_event(&self) -> Option<DieEvent> {
-        let die_events = self.history.get_events( DIE, 1 );
-        if die_events.len() > 0 {
-            for entry in die_events {
-                let dead = entry.0;
-                match dead {
-                    Event::Die(ref ev) => {
-                        if !self.is_our_bot(ev.bot_id) {
-                            return Some(ev.clone());
-                        }
-                    },
-                    _ => ()
-                }
+    fn get_possible_kill(&self) -> Option<DieEvent> {
+        for entry in self.history.get_events( DIE, 1 ) {
+            match entry.0 {
+                Event::Die(ref ev) => {
+                    if !self.is_our_bot(ev.bot_id) {
+                        return Some(ev.clone());
+                    }
+                },
+                _ => ()
             }
         }
         return None;
