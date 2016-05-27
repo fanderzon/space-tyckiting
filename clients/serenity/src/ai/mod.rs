@@ -266,13 +266,13 @@ impl Ai {
         self.update_state(&events);
 
         // Add events to history after filtering out asteroids
-        self.history.add_events(&self.round_id, &events);
+        self.history.add_events(self.round_id, &events);
 
         // Get mode and actions for the round and add those to history too
         let (decision,actions) = self.make_decisions();
 
-        self.history.add_actions(&self.round_id, &actions);
-        self.history.set_decision(&self.round_id, decision);
+        self.history.add_actions(self.round_id, &actions);
+        self.history.set_decision(self.round_id, decision);
 
         self.logger.log(&actions.render(), 2);
         return self.make_actions_message(actions);

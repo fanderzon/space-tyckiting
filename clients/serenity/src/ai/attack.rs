@@ -135,7 +135,6 @@ impl Ai {
                     return ();
                 }
             }
-
         }
 
         return ();

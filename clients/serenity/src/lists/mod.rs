@@ -98,67 +98,62 @@ impl ActionsList for Vec<Action> {
 }
 
 pub trait HistoryList {
-    fn add_events(&mut self, round_id: &i16, events: &Vec<Event>);
-    fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>);
+    fn add_events(&mut self, round_id: i16, events: &Vec<Event>);
+    fn add_actions(&mut self, round_id: i16, actions: &Vec<Action>);
     fn get(&self, round_id: &i16) -> Option<&HistoryEntry>;
-    fn get_mut(&mut self, round_id: &i16) -> Option<&mut HistoryEntry>;
+    fn get_mut(&mut self, round_id: i16) -> Option<&mut HistoryEntry>;
     fn filter_relevant(&self, events: &Vec<Event>) -> Vec<Event>;
     fn get_events(&self, match_event: &str, since: i16) -> Vec<(Event, i16)>;
     fn get_events_for_round(&self, match_event: &str, round_id: i16) -> Vec<Event>;
     fn get_last_enemy_position(&self) -> Option<(Event, i16)>;
     fn get_last_attack_action(&self) -> Option<(Action, i16)>;
     fn get_echo_positions(&self, since: i16) -> Vec<(Pos,i16)>;
+    fn get_unused_echoes(&self, since: i16) -> Vec<(Pos,i16)>;
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)>;
     fn get_actions_for_round(&self, match_action: &str, round_id: i16) -> Vec<Action>;
     fn get_action_for_bot(&self, bot_id: &i16, round_id: &i16) -> Option<Action>;
     fn set_mode(&mut self, round_id: &i16, mode: ActionMode);
     fn get_mode(&self, round_id: i16) -> ActionMode;
-    fn set_decision(&mut self, round_id: &i16, mode: Decision);
+    fn set_decision(&mut self, round_id: i16, mode: Decision);
     fn get_decision(&self, round_id: i16) -> Decision;
 }
 
 impl HistoryList for Vec<HistoryEntry> {
     #[allow(dead_code)]
-    fn add_events(&mut self, round_id: &i16, events: &Vec<Event>) {
-        debug_assert!(0 <= *round_id && *round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
+    fn add_events(&mut self, round_id: i16, events: &Vec<Event>) {
+        debug_assert!(0 <= round_id && round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
         let filtered_events = self.filter_relevant(events);
         let mut new_entry: Option<HistoryEntry> = None;
-        match self.get_mut(&round_id) {
-            Some(history_entry) => history_entry.events = filtered_events,
-            None => {
-                new_entry = Some(HistoryEntry {
-                    round_id: *round_id,
-                    events: filtered_events,
-                    actions: Vec::new(),
-                    decision: Decision::with_defaults(),
-                });
+        if self.len() as i16 > round_id {
+            if let Some(history_entry) = self.get_mut(round_id) {
+                history_entry.events = filtered_events;
             }
-        }
-        match new_entry {
-            Some(history_entry) => self.push(history_entry),
-            None => ()
+        } else {
+            self.push(HistoryEntry {
+                round_id: round_id,
+                events: filtered_events,
+                actions: Vec::new(),
+                decision: Decision::with_defaults(),
+            });
         }
     }
 
     #[allow(dead_code)]
-    fn add_actions(&mut self, round_id: &i16, actions: &Vec<Action>) {
-        debug_assert!(0 <= *round_id && *round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
+    fn add_actions(&mut self, round_id: i16, actions: &Vec<Action>) {
+        debug_assert!(0 <= round_id && round_id <= self.len() as i16, "Adding either to existing round or to nextcoming one.");
         let mut new_entry: Option<HistoryEntry> = None;
         let a = actions.iter().cloned().collect();
-        match self.get_mut(&round_id) {
-            Some(history_entry) => history_entry.actions = a,
-            None => {
-                new_entry = Some(HistoryEntry {
-                    round_id: *round_id,
-                    events: Vec::new(),
-                    actions: a,
-                    decision: Decision::with_defaults(),
-                });
+        if self.len() as i16 > round_id {
+            if let Some(history_entry) = self.get_mut(round_id) {
+                history_entry.actions = a;
             }
-        }
-        match new_entry {
-            Some(history_entry) => self.push(history_entry),
-            None => ()
+        } else {
+            self.push(HistoryEntry {
+                round_id: round_id,
+                events: Vec::new(),
+                actions: a,
+                decision: Decision::with_defaults(),
+            });
         }
     }
 
@@ -170,10 +165,10 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     #[allow(dead_code)]
-    fn get_mut(&mut self, round_id: &i16) -> Option<&mut HistoryEntry> {
-        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
+    fn get_mut(&mut self, round_id: i16) -> Option<&mut HistoryEntry> {
+        debug_assert!(0 <= round_id && round_id < self.len() as i16);
         self.iter_mut()
-            .find(|he|he.round_id == *round_id)
+            .find(|he|he.round_id == round_id)
     }
 
     #[allow(dead_code)]
@@ -275,13 +270,49 @@ impl HistoryList for Vec<HistoryEntry> {
             .collect()
     }
 
+    // Returns unused echoes that has been logged to history.decision.unused_echoes
+    // Positions that have been used as target in later rounds are filtered out
+    // The vector is sorted in reverse round_id order
+    fn get_unused_echoes(&self, since: i16) -> Vec<(Pos,i16)> {
+        let last_round = self.len() as i16 - 1;
+        let mut echoes: Vec<(Pos,i16)> = self
+            .iter()
+            .filter(|he| he.round_id > last_round - since)
+            .flat_map(|he| {
+                // Slightly ugly work around for returning a tuple with the round_id
+                let mut round_ids: Vec<i16> = Vec::new();
+                for i in 0..he.decision.unused_echoes.len() {
+                    round_ids.push(he.round_id);
+                }
+                he.decision.unused_echoes
+                    .iter()
+                    .cloned()
+                    .zip(round_ids)
+            })
+            .filter(|&(pos, round_id)| {
+                let count: usize = self
+                    .iter()
+                    .filter(|he| he.decision.target.is_some())
+                    .filter(|he| {
+                        // filter out "unused echoes" that has been used as a target in a later round
+                        {he.decision.target.unwrap() == pos && he.round_id > round_id}
+                    })
+                    .count();
+                count == 0
+            })
+            .collect();
+        // Sort reverse by round_id
+        echoes.sort_by(|a, b| b.1.cmp(&a.1));
+        echoes
+    }
+
     // Returns each matching action as a tuple with round_id as second value
     #[allow(dead_code,unused_variables)]
     fn get_actions(&self, match_action: &str, since: i16) -> Vec<(Action, i16)> {
         debug_assert!(since >= 0);
         let last_round = self.len() as i16 - 1;
         self.iter()
-            .filter(|he| he.round_id > last_round - since  )
+            .filter(|he| he.round_id > last_round - since)
             .flat_map(|he| {
                 // Slightly ugly work around for returning a tuple with the round_id
                 let mut round_ids: Vec<i16> = Vec::new();
@@ -327,7 +358,7 @@ impl HistoryList for Vec<HistoryEntry> {
     #[allow(dead_code)]
     fn set_mode(&mut self, round_id: &i16, mode: ActionMode) {
         debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
-        match self.get_mut(round_id) {
+        match self.get_mut(*round_id) {
             Some(history_entry) => history_entry.decision.mode = mode,
             None => ()
         }
@@ -340,8 +371,8 @@ impl HistoryList for Vec<HistoryEntry> {
     }
 
     #[allow(dead_code)]
-    fn set_decision(&mut self, round_id: &i16, decision: Decision) {
-        debug_assert!(0 <= *round_id && *round_id < self.len() as i16);
+    fn set_decision(&mut self, round_id: i16, decision: Decision) {
+        debug_assert!(0 <= round_id && round_id < self.len() as i16);
         match self.get_mut(round_id) {
             Some(history_entry) => history_entry.decision = decision,
             None => ()
